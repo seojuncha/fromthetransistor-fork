@@ -1,7 +1,4 @@
-module uart #(parameter CLOCK_F = 100000000, 
-              parameter BAUDRATE = 9600, 
-              parameter FIFO_DEPTH = 2)
-  (
+module uart (
   // default
   input clk,
   input reset,
@@ -15,10 +12,11 @@ module uart #(parameter CLOCK_F = 100000000,
   input rx_start,
   input tx_start, 
   output reg rx_enable,
-  output reg tx_enable
+  output reg tx_enable,
+  // config
+  input [13:0] baud_tick_max
 ); 
-  // FIXME: It isn't worked!!
-  // real BAUD_TICK = (1 / BAUDRATE) / (1 / CLOCK_F);
+  localparam FIFO_DEPTH = 2;
 
 //  baudrate ?  bits per sec
 //   9600bits/sec
@@ -60,10 +58,6 @@ module uart #(parameter CLOCK_F = 100000000,
 //   star bit(1), data bit(8), stop bit(1)
 
   initial begin
-    $display("temp1: %f", 1 / BAUDRATE);
-    $display("clock freq: %d", CLOCK_F);
-    $display("baudrate: %d", BAUDRATE);
-    // $display("baudtick: %f", BAUD_TICK);
     baud_tick_counter <= 0;
     rx_enable <= 0;
     tx_enable <= 0;
@@ -88,7 +82,11 @@ module uart #(parameter CLOCK_F = 100000000,
         output_fifo[i] = 10'b0;
       end
     end else if (rx_start) begin
-
+      baud_tick_counter <= baud_tick_counter + 1;
+      if (baud_tick_counter >= baud_tick_max) begin
+        // baud_tick_counter <= 14'b0;
+        rx_enable <= 1;   // temp!
+      end
     end else if (tx_start) begin
 
     end
