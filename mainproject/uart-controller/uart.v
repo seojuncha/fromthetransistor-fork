@@ -13,7 +13,9 @@ module uart #(parameter CLOCK_F = 100000000,
   output reg [7:0] data_out,
   // control
   input rx_start,
-  input tx_start, output reg rx_enable, output reg tx_enable
+  input tx_start, 
+  output reg rx_enable,
+  output reg tx_enable
 ); 
   // FIXME: It isn't worked!!
   // real BAUD_TICK = (1 / BAUDRATE) / (1 / CLOCK_F);
