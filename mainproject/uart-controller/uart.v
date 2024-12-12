@@ -1,3 +1,5 @@
+// ver 1. 
+//  - Half Duplex
 module uart (
   // default
   input clk,
@@ -6,17 +8,22 @@ module uart (
   input rx,
   output tx,
   // data channel
-  input [7:0] data_in,
-  output reg [7:0] data_out,
+  input [7:0] data_in,         // to tx wire
+  output reg [7:0] data_out,   // from rx wire
   // control
   input rx_start,
-  input tx_start, 
-  output reg rx_enable,
-  output reg tx_enable,
+  input tx_start,
+  output reg enable,   // 0: disabled, 1: enabled
   // config
   input [13:0] baud_tick_max
 ); 
-  localparam FIFO_DEPTH = 2;
+  localparam IDLE = 2'b00, START = 2'b01, ACTIVE = 2'b10, STOP = 2'b11;
+
+  // IDLE: enable=1
+  // START: enable=0, 
+  // ACTIVE: increate baud tick,
+  // STOP: enable=1, send stop bit
+  reg [1:0] state;
 
 //  baudrate ?  bits per sec
 //   9600bits/sec
@@ -46,50 +53,58 @@ module uart (
 // 0 <= M <= 16384(2**14)
   reg [13:0] baud_tick_counter;
 
-// shift register
+  reg [3:0] shift_index;
   reg [9:0] shift_reg;
 
-// two fifo buffers, (rx and tx)
   integer i;
-  reg [7:0] input_fifo[FIFO_DEPTH];
-  reg [7:0] output_fifo[FIFO_DEPTH];
+  // reg [7:0] fifo[FIFO_DEPTH];
 
 // data frame: 10-bit
 //   star bit(1), data bit(8), stop bit(1)
 
   initial begin
-    baud_tick_counter <= 0;
-    rx_enable <= 0;
-    tx_enable <= 0;
-    data_out <= 8;
-    shift_reg <= 10'b0;
-    for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
-      input_fifo[i] = 10'b0;
-      output_fifo[i] = 10'b0;
-    end
+    state = IDLE;
   end
-
-  // TODO: rx_enable or tx_enable is set by the status of fifo buffer.
 
   always @(posedge clk or negedge reset) begin
     if (reset) begin
-      rx_enable <= 0;
-      tx_enable <= 0;
-      data_out <= 8;
-      shift_reg <= 10'b0;
-      for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
-        input_fifo[i] = 10'b0;
-        output_fifo[i] = 10'b0;
-      end
-    end else if (rx_start) begin
+      state <= IDLE;
+    end else if (rx_start || tx_start) begin
+      state <= START;
       baud_tick_counter <= baud_tick_counter + 1;
-      if (baud_tick_counter >= baud_tick_max) begin
-        // baud_tick_counter <= 14'b0;
-        rx_enable <= 1;   // temp!
-      end
-    end else if (tx_start) begin
-
     end
   end
+
+  always @(*) begin
+    case(state)
+      IDLE: begin
+        baud_tick_counter <= 0;
+        enable <= 1;
+        data_out <= 0;
+        shift_reg <= 0;
+      end
+      START: begin
+        state <= ACTIVE;
+        if (rx_start) begin
+          shift_reg <= {1'b0, data_in, 1'b0};
+        end else if (tx_start) begin
+
+        end
+      end
+      ACTIVE: begin
+        // shift and send/receive one bit
+        if (baud_tick_counter >= baud_tick_max) begin
+          state <= ACTIVE;
+          // baud_tick_counter <= 14'b0;
+        end
+      end
+      STOP: begin
+        state <= IDLE;
+      end
+    endcase
+  end
+
+  // assign tx = ??
+  // assign rx = ??
 
 endmodule
