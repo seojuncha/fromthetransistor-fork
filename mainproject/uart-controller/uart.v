@@ -55,7 +55,6 @@ module uart (
       enable <= 1;
       shift_reg <= 0;
     end else if (enable && !rx) begin    // start receiving
-      $display("start");
       enable <= 0;
       shift_index <= shift_index + 1;
       shift_reg[shift_index] <= rx;
@@ -64,12 +63,10 @@ module uart (
       if (baud_tick_counter >= baud_tick_max) begin
         baud_tick_counter <= 0;
         if (shift_index == 9) begin
-          $display("done... %b", shift_reg);
+          shift_reg[shift_index] <= rx;
           shift_index <= 0;
           enable <= 1;
-          // shift_reg <= 0; ?
         end else begin
-          $display("next rx: %d", rx);
           shift_index <= shift_index + 1;
           shift_reg[shift_index] <= rx;
         end
