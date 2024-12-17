@@ -1,6 +1,4 @@
-## cocotb
-
-### Setup environment
+# Setup environment
 
 __MacOS__
 - Processor: Apple Sillicon M2
@@ -33,4 +31,23 @@ $ meson setup build
 $ meson compile -C build
 $ cd build/src
 $ ./gtkwave
+```
+
+Build qemu for arm only
+```shell
+$ git clone -b v9.2.0 https://gitlab.com/qemu-project/qemu.git
+$ cd qemu
+$ mkdir build
+$ cd build
+$ ../configure --target-list=arm-linux-user,arm-softmmu
+$ make && make install
+```
+```shell
+$ qemu-arm --version
+$ qemu-system-arm --version
+```
+
+Install Cross-Compiler (Ubuntu)
+```shell
+$ sudo apt install gcc-arm-none-eabi gdb-multiarch
 ```
