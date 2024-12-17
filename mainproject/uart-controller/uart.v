@@ -35,18 +35,17 @@ module uart (
   reg [13:0] baud_tick_counter;
 
   reg [3:0] shift_index;
+  /* verilator lint_off UNUSEDSIGNAL */
   reg [9:0] shift_reg;
-
-  integer i;
 
 // data frame: 10-bit
 //   star bit(1), data bit(8), stop bit(1)
 
   initial begin
-    baud_tick_counter <= 0;
-    enable <= 1;
-    shift_reg <= 0;
-    shift_index <= 0;
+    baud_tick_counter = 0;
+    enable = 1;
+    shift_reg = 0;
+    shift_index = 0;
   end
 
   always @(posedge clk or negedge reset) begin

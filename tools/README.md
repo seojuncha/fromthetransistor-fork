@@ -47,7 +47,22 @@ $ qemu-arm --version
 $ qemu-system-arm --version
 ```
 
-Install Cross-Compiler (Ubuntu)
+__Ubuntu__
+```shell
+$ sudo apt install iverilog
+$ pip3 install cocotb
+$ sudo apt install gtkwave
+```
+
+Install Verilator
+```shell
+$ ./install_verilator.sh
+```
+> [!NOTE]
+> Do not install Verilator by using the package manager, apt.
+> Installed Verilator version is too low.
+
+Install Cross-Compiler
 ```shell
 $ sudo apt install gcc-arm-none-eabi gdb-multiarch
 ```
