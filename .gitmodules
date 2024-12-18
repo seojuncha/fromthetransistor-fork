@@ -1,0 +1,3 @@
+[submodule "tools/qemu"]
+	path = tools/qemu
+	url = git@github.com:seojuncha/qemu-fromthetransistor.git
