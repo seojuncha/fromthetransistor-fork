@@ -9,7 +9,7 @@ void main(void)
 {
   char buffer[] = "abcd";
   init_uart();
-  for (int i = 0; i < 13; i++) {
+  for (int i = 0; i < 4; i++) {
     write_uart(buffer[i]);
   }
   while (1) {
