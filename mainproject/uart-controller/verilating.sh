@@ -1,3 +1,3 @@
 #!/bin/bash
 
-verilator --binary -j `nproc` -Wall $1.v
+verilator --binary -j `nproc` -Wall uart.v
