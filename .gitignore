@@ -6,3 +6,4 @@ verilator
 obj_dir
 *.elf
 *.log
+.vscode
