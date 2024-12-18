@@ -39,7 +39,7 @@ $ git clone -b v9.2.0 https://gitlab.com/qemu-project/qemu.git
 $ cd qemu
 $ mkdir build
 $ cd build
-$ ../configure --target-list=arm-linux-user,arm-softmmu
+$ ../configure --target-list=arm-linux-user,arm-softmmu --enable-trace-backends=log,simple
 $ make && make install
 ```
 ```shell

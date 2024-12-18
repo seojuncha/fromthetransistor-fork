@@ -5,3 +5,4 @@ gtkwave
 verilator
 obj_dir
 *.elf
+*.log
