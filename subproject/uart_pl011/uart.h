@@ -12,7 +12,13 @@
  * raspi (BCM2835)
  * https://datasheets.raspberrypi.com/bcm2835/bcm2835-peripherals.pdf
 */
-#define UART_BASE_ADDR  0x20201000 
+// #define UART_BASE_ADDR  0x20201000
+
+/**
+ * qemu/hw/arm/virt.c
+ * base_memmap[VIRT_UART0]
+*/
+#define UART_BASE_ADDR  0x09000000
 
 // #define UARTCLK         24000000
 #define UARTCLK         3000000
