@@ -74,9 +74,35 @@ async def tb_uart(dut):
         dut.rx.value = int(in_val)
         for i in range(clock_div):
           await RisingEdge(dut.clk)
-        dut._log.info("in: %d rx: %s b: %s shift_reg: %s", int(in_val), dut.rx.value, dut.bit_count.value, dut.shift_reg.value.binstr)
+        dut._log.info("in: %d rx: %s b: %s rx_shift_reg: %s", int(in_val), dut.rx.value, dut.bit_count.value, dut.rx_shift_reg.value.binstr)
       await RisingEdge(dut.clk)
       dut._log.info("in: %d rx: %s b: %s data_out: %s", int(in_val), dut.rx.value, dut.bit_count.value, dut.rx_data_out.value.binstr)
 
-      char = binascii.unhexlify("%x" % int("0b"+dut.rx_data_out.value.binstr[::-1], 2))
-      dut._log.info("final result: %s [%s] ", char, dut.rx_data_out.value.binstr)
+      temp = dut.rx_data_out.value
+      char = binascii.unhexlify("%x" % int("0b"+temp.binstr[::-1], 2))
+      dut._log.info("final result: %s [%s] ", char, temp.binstr)
+
+      # echo one character
+      dut.tx_start.value = 1
+      await RisingEdge(dut.tx_ready)
+      dut.tx_data_in.value = temp
+
+      binary_str = "0b"
+      for i in range(10):
+        if i > 1:
+          print(dut.tx.value.binstr)
+          binary_str = binary_str + dut.tx.value.binstr
+        dut._log.info("busy: %s, out: %s, tx_shift_reg: %s", dut.tx_busy.value, dut.tx.value, dut.tx_shift_reg.value.binstr)
+        for i in range(clock_div):
+          await RisingEdge(dut.clk)
+
+      dut._log.info("ECHO : %s", chr(int(binary_str, 2)))
+
+      dut.tx_start.value = 0
+      await RisingEdge(dut.clk)
+      dut._log.info("END busy: %s, out: %s, tx_shift_reg: %s", dut.tx_busy.value, dut.tx.value, dut.tx_shift_reg.value.binstr)
+
+      # Check data out bit
+      for i in range(100):
+          await RisingEdge(dut.clk)
+      dut._log.info("FINAL CHECK busy: %s, out: %s, tx_shift_reg: %s", dut.tx_busy.value, dut.tx.value, dut.tx_shift_reg.value.binstr)
