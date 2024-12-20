@@ -4,6 +4,8 @@ results.xml
 gtkwave
 verilator
 obj_dir
+*.o
+*.bin
 *.elf
 *.log
 .vscode
