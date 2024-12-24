@@ -60,6 +60,7 @@ class InstructionObj:
   
   def dump(self):
     print(f"{self.line_string:^80}")
+    print({self.name})
     rd = f"R{self.rd}" if self.rd is not None else "-"
     rn = f"R{self.rn}" if self.rn is not None else "-"
     label = f"{self.label}" if self.label is not None else "-"
@@ -102,4 +103,4 @@ class ShifterOperandObj:
           self.rs = int(shifter_split[1][1:])
 
   def dump(self):
-    print(f"imm\t[#{self.imm}]\t\trm\t[R{self.rm}]\nshifter\t[{self.shifter}]\t\timm\t[#{self.shift_imm}]\trs\t[R{self.rs}]")
+    print(f"[shifter op]\nimm\t[#{self.imm}]\t\trm\t[R{self.rm}]\nname\t[{self.shifter}]\t\tshift imm\t[#{self.shift_imm}]\trs\t[R{self.rs}]")

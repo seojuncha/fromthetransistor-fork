@@ -7,6 +7,8 @@ class Encoder:
 
   def encode(self, objs: list[InstructionObj]):
     for obj in objs:
+      # temp to clear
+      self.encoding_bits = 0x00000000
       # Now, use only always condition
       self.set_condition_flag_bit("al")
       if obj.is_type1_dataprocessing() or obj.is_type2_dataprocessing() or obj.is_type3_dataprocessing():
@@ -31,7 +33,7 @@ class Encoder:
     elif obj.shifter_obj.is_only_reg:
       self.set_bit(0, 25)
       self.set_bit(0x00, 4)
-      self.set_bit(obj.shifter_obj.rm, 0)
+      self.set_bit(obj.shifter_obj.rm, 0)  
 
   def branch_encoding(self):
     pass
