@@ -1,16 +1,19 @@
 module cpu (
   input clk,
-  input reset,
-  input [31:0] instruction,
+  input n_reset,
+  input n_rw,  // LOW in read
+  input [31:0] instrunction,
   input [31:0] address_bus,
+  input [31:0] data_in_bus,
+  output reg [31:0] data_out_bus
 );
   /**
    * r0-r13: general purpose register
    * r14 : link register (LR)
    * r15 : program counter (PC)
    */
-  reg [14:0] register;
-  reg pc;
+  reg [31:0] register [0:15];
+  reg [31:0] pc;
 
   /** 
    * current program status register (CPSR)
@@ -25,7 +28,11 @@ module cpu (
    * T (Thumb) : should be zero
    * M[4:0] (Mode) : should be zero(user mode)
    */
-  reg cpsr;
+  reg [31:0] cpsr;
+
+  initial begin
+    pc = 0x00000000
+  end
 
   always @(posedge clk or negedge reset) begin
     if (!reset) begin
