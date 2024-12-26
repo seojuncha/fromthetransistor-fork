@@ -16,7 +16,6 @@ class Parser:
       if Parser.is_directives(line):
         pass
       elif Parser.is_label(line):
-        print(f"not support yet:\t{line}")
         self._not_support_count += 1
       else:
         objs.append(InstructionObj.create(self._inst_num, line))

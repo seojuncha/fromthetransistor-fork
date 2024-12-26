@@ -4,7 +4,7 @@ class InstructionObj:
   @classmethod
   def create(cls, inst_number: int, line_string: str):
     inst_addr = inst_number * 4
-    print(f"CREATE [addr: 0x{inst_addr:x}]\t{line_string:<80}")
+    # print(f"CREATE [addr: 0x{inst_addr:x}]\t{line_string:<80}")
     line_elem = line_string.split(" ")
     mnemonic = line_elem[0].casefold()
 
@@ -32,13 +32,20 @@ class InstructionObj:
     else:
       return None
       
-  def __init__(self, line_string: str, addr: int, name: str, target_addr: str=None, rd: int=0, rn: int=0, shifter_operand: str=None):
+  def __init__(self, 
+               line_string: str, 
+               addr: int, 
+               name: str, 
+               target_addr: str=None, 
+               rd: int=0, 
+               rn: int=0, 
+               shifter_operand: str=None):
     self.name = name
     self.addr = addr
     self.line_string = line_string
     self.has_condition = False
     self.target_addr = None
-    if target_addr:  self.target_addr = addr if target_addr is "." else int(target_addr[1:])
+    if target_addr:  self.target_addr = addr if target_addr == "." else int(target_addr[1:])
     self.rd = rd
     self.rn = rn
     self.shifter_obj = None if shifter_operand == None else ShifterOperandObj(shifter_operand)

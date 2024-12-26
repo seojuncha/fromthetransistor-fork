@@ -8,16 +8,35 @@ from capstone import Cs, CS_ARCH_ARM, CS_MODE_ARM
 from as_parser import Parser
 from as_encoder import Encoder
 
-def check():
-  with open("sample/from-chatgpt/objdir/data_processing.o", "rb") as of:
+def check(path):
+  comp1 = dict()
+  with open(path+".o", "rb") as of:
     elf = ELFFile(of)
     text_section = elf.get_section_by_name(".text")
     text_data = text_section.data()
     disassembler = Cs(CS_ARCH_ARM, CS_MODE_ARM)
     for i, instruction in enumerate(disassembler.disasm(text_data, text_section['sh_addr'])):
-      print(f"0x{instruction.address:x}:\t{instruction.mnemonic}\t{instruction.op_str}")
+      # print(f"0x{instruction.address:x}:\t{instruction.mnemonic}\t{instruction.op_str}")
       inst = (int.from_bytes(text_data, byteorder="little") >> (i * 32)) & 0xffff_ffff
-      print(hex(inst))
+      # print(hex(inst))
+      comp1[instruction.address] = (f"{instruction.mnemonic} {instruction.op_str}", inst)
+
+  comp2 = dict()
+  p = Parser("sample/from-chatgpt/data_processing.s")
+  objs = p.parse()
+  e = Encoder()
+  for o in objs:
+    # o.dump()
+    addr, bits = e.encode(o)
+    comp2[addr] = bits
+
+  for address, (opstr, instruction) in comp1.items():
+    if address in comp2.keys():
+      if instruction != comp2.get(address):
+        print(f"NOT MATCH [{opstr:<14}]\t{instruction:8x}\t{comp2.get(address):8x}")
+    else:
+      print(f"no address error: {hex(address):08x}")
+
 
 if __name__ == "__main__":
-  check()
+  check("sample/from-chatgpt/objdir/data_processing")

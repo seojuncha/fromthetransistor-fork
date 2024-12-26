@@ -5,19 +5,16 @@ class Encoder:
   def __init__(self):
     self.encoding_bits = 0x00000000
 
-  def encode(self, objs: list[InstructionObj]):
-    for obj in objs:
-      # temp to clear
-      self.encoding_bits = 0x00000000
-      # Now, use only always condition
-      self.set_condition_flag_bit("al")
-      if obj.is_type1_dataprocessing() or obj.is_type2_dataprocessing() or obj.is_type3_dataprocessing():
-        self.data_processing_encoding(obj)
-      elif obj.is_branch():
-        self.branch_encoding(obj)
-      else:
-        continue
-      print(f"0b{self.encoding_bits:32b} [0x{self.encoding_bits:4x}] {obj.line_string}")
+  def encode(self, obj: InstructionObj):
+    self.encoding_bits = 0x00000000
+    # Now, use only always condition
+    self.set_condition_flag_bit("al")
+    if obj.is_type1_dataprocessing() or obj.is_type2_dataprocessing() or obj.is_type3_dataprocessing():
+      self.data_processing_encoding(obj)
+    elif obj.is_branch():
+      self.branch_encoding(obj)
+    # print(f"0b{self.encoding_bits:32b} [0x{self.encoding_bits:4x}] {obj.line_string}")
+    return obj.addr, self.encoding_bits
 
   def data_processing_encoding(self, obj: InstructionObj):
     self.set_bit(0, 27)

@@ -6,9 +6,9 @@ from as_encoder import Encoder
 if __name__ == "__main__":
   p = Parser("sample/from-chatgpt/data_processing.s")
   objs = p.parse()
+  e = Encoder()
 
   for o in objs:
     o.dump()
-
-  e = Encoder()
-  e.encode(objs)
+    addr, bits = e.encode(o)
+    print(f"\t\t\t\t\t\t[0x{addr:x}] {bits:8x}")
