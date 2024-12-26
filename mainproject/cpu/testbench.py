@@ -15,4 +15,4 @@ async def tb_cpu(dut):
 
   for i in range(13):
     await FallingEdge(dut.clk)
-    dut._log.info(f"pc [0x{int(dut.pc.value):<3x}] data_in [{dut.data_in.value}]")
+    dut._log.info(f"[0x{int(dut.pc.value):<3x}] data_in [{dut.data_in.value}]")
