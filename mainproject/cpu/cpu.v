@@ -1,45 +1,48 @@
 module cpu (
   input clk,
-  input n_reset,
-  input n_rw,  // LOW in read
-  input [31:0] instrunction,
-  input [31:0] address_bus,
-  input [31:0] data_in_bus,
-  output reg [31:0] data_out_bus
+  input n_reset
 );
-  /**
-   * r0-r13: general purpose register
-   * r14 : link register (LR)
-   * r15 : program counter (PC)
-   */
-  reg [31:0] register [0:15];
+  // registers
+  reg [31:0] register [0:13];
   reg [31:0] pc;
-
-  /** 
-   * current program status register (CPSR)
-   * +-31-+-30-+-29-+-28-+-27-+-26-----------8-+-7-+-6-+-5-+-4-+-3-+-2-+-1-+-0-+
-   * | N  | Z  | C  | V  | Q  |      DNM       | I | F | T | M | M | M | M | M |
-   * +----+----+----+----+----+----------------+---+---+---+---+---+---+---+---+
-   * |            condition                    |             control           |
-   * N (Negative)
-   * Z (Zero)
-   * C (Carry)
-   * V (oVerflow)
-   * T (Thumb) : should be zero
-   * M[4:0] (Mode) : should be zero(user mode)
-   */
   reg [31:0] cpsr;
 
+  // interfaces
+  wire [31:0] address;
+  wire [31:0] data_in;
+  wire [31:0] data_out;
+
+  // internal wires
+  wire bram_enable;
+  wire [17:0] bram_addr;
+
   initial begin
-    pc = 0x00000000
+    pc = 32'h0000_0000;
   end
 
-  always @(posedge clk or negedge reset) begin
-    if (!reset) begin
+  initial begin
+    $monitor("[%0t] PC [%x] DATA_IN [0x%8x]",$time, pc, data_in);
+  end
 
+  always @(posedge clk or negedge n_reset) begin
+    if (!n_reset) begin
+      pc <= 32'h0000_0000;
     end else begin
-
+      if (bram_enable) begin
+        pc <= pc + 4;
+      end
     end
   end
+
+  assign bram_addr = pc >> 2;
+
+  // modules
+  bram bram_inst (
+    .clk(clk),
+    .enable(bram_enable),
+    .address(bram_addr),
+    .data_out(data_in)
+    );
+
 
 endmodule
