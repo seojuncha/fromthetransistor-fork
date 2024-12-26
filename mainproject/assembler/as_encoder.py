@@ -13,6 +13,8 @@ class Encoder:
       self.set_condition_flag_bit("al")
       if obj.is_type1_dataprocessing() or obj.is_type2_dataprocessing() or obj.is_type3_dataprocessing():
         self.data_processing_encoding(obj)
+      elif obj.is_branch():
+        self.branch_encoding(obj)
       else:
         continue
       print(f"0b{self.encoding_bits:32b} [0x{self.encoding_bits:4x}] {obj.line_string}")
@@ -33,10 +35,20 @@ class Encoder:
     elif obj.shifter_obj.is_only_reg:
       self.set_bit(0, 25)
       self.set_bit(0x00, 4)
-      self.set_bit(obj.shifter_obj.rm, 0)  
+      self.set_bit(obj.shifter_obj.rm, 0)
 
-  def branch_encoding(self):
-    pass
+  def branch_encoding(self, obj: InstructionObj):
+    self.set_bit(1, 27)
+    self.set_bit(0, 26)
+    self.set_bit(1, 25)
+    self.set_bit(0, 24) # no link address now.
+    # target address = PC + 8 + (offset * 4)
+    # offset = target address - (PC + 8) / 4
+    # if target address is the address of branch instruction
+    # offset = pc - pc - 8 / 4 = -2
+    # two's comp of -2 (4-bit) = 0010 -> 1101 -> 1110!
+    # 24-bit sign extended : 111...1110 -> 0xfffffe 
+    self.set_bit(0xfffffe, 0)  # TEMP
 
   def memory_encoding(self):
     pass

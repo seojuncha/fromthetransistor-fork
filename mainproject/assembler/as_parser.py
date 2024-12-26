@@ -4,10 +4,11 @@ class Parser:
   def __init__(self, filepath=None):
     self._file = open(filepath, "r")
     self._not_support_count = 0
+    self._inst_num = 0
 
   def parse(self) -> list[InstructionObj]:
     objs = []
-    for i, line in enumerate(self._file.readlines()):
+    for line in self._file.readlines():
       ret, line = Parser.cleaner(line)
       if ret: continue
 
@@ -18,7 +19,8 @@ class Parser:
         print(f"not support yet:\t{line}")
         self._not_support_count += 1
       else:
-        objs.append(InstructionObj.create(i+1, line))
+        objs.append(InstructionObj.create(self._inst_num, line))
+        self._inst_num += 1
 
     self._file.close()
 
