@@ -1,7 +1,7 @@
 OS := $(shell uname)
 
-# SAMPLE_DIR := sample/from-claude
-SAMPLE_DIR := sample/from-chatgpt
+SAMPLE_DIR := sample/from-claude
+#SAMPLE_DIR := sample/from-chatgpt
 
 SRC_FILES := $(wildcard $(SAMPLE_DIR)/*.s)
 OBJ_FILES := $(patsubst $(SAMPLE_DIR)/%.s, $(SAMPLE_DIR)/%.o, $(SRC_FILES))

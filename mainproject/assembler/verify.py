@@ -38,7 +38,8 @@ def check(path):
       else:
         success.append(f"[{opstr:<14}]\t{instruction:8x}\t{comp2.get(address):8x}")
     else:
-      fail.append(f"no address error: {hex(address):08x}")
+      # fail.append(f"no address error: {hex(address):08x}")
+      fail.append(f"no address error: [{address}] {opstr}")
 
   print("="*20+"SUCCESS: "+str(len(success))+"="*20)
   for s in success:
@@ -48,4 +49,5 @@ def check(path):
     print(f)
 
 if __name__ == "__main__":
-  check("sample/from-chatgpt/move")
+  # check("sample/from-chatgpt/move")
+  check("sample/from-claude/arm-test-data")

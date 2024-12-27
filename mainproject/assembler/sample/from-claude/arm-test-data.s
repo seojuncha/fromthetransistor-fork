@@ -55,19 +55,19 @@ _start:
     add r0, r1, r2, lsr #4
 
     @ Test conditional execution
-    moveq r0, #1
-    movne r0, #2
-    movcs r0, #3
-    movcc r0, #4
-    movmi r0, #5
-    movpl r0, #6
-    movvs r0, #7
-    movvc r0, #8
-    movhi r0, #9
-    movls r0, #10
-    movge r0, #11
-    movlt r0, #12
-    movgt r0, #13
-    movle r0, #14
+    @ moveq r0, #1
+    @ movne r0, #2
+    @ movcs r0, #3
+    @ movcc r0, #4
+    @ movmi r0, #5
+    @ movpl r0, #6
+    @ movvs r0, #7
+    @ movvc r0, #8
+    @ movhi r0, #9
+    @ movls r0, #10
+    @ movge r0, #11
+    @ movlt r0, #12
+    @ movgt r0, #13
+    @ movle r0, #14
     
 .end

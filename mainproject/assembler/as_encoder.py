@@ -142,6 +142,11 @@ class Encoder:
     self.encoding_bits |= val << pos
 
   def set_rotate_imm(self, imm):
+    if imm >= 0 and imm <= 0xff:
+      self.set_bit(0, 8)
+      self.set_bit(imm, 0)
+      return
+
     # rotate_imm[11:8] - 4 bits
     # immed_8[7:0] - 8 bits
     # 4-bit rotate_imm : 16 cases
@@ -149,8 +154,7 @@ class Encoder:
       # get 8-bit to find a proper immed_8 value
       imm8 = (imm >> (2*i)) & 0xff
       # must represent a value in 32-bit word
-      rotated_imm = ((imm >> (2*i)) | (imm << 32-(2*i))) & 0xffffffff
+      rotated_imm = (imm8 << (2*i)) | (imm8 >> 32-(2*i)) & 0xffffffff
       if rotated_imm == imm:
-        self.set_bit(i, 8)
-        self.set_bit(imm8, 0)
-        break
+        self.set_bit(rotated_imm & 0xf, 8)
+        self.set_bit(imm8 & 0xff, 0)

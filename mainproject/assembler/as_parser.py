@@ -20,11 +20,11 @@ class Parser:
         self._not_support_count += 1
       else:
         inst_addr = self._inst_num * 4
-        line = " ".join(line.split())
+        line = " ".join(line.split()).strip()
         line_elem = line.split(" ")
         mnemonic = line_elem[0].casefold()
 
-        print(line_elem)
+        print(f"LINE: {line_elem}")
 
         if mnemonic in data_opcode_map.keys():
           reg = line_elem[1].rstrip(",")
@@ -39,14 +39,14 @@ class Parser:
           elif mnemonic in data_processing_type2_list:
             inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rn=num, shifter_operand=" ".join(line_elem[2:])))
           elif mnemonic in data_processing_type3_list:
-            num2 = int(line_elem[2].rstrip(",")[1:])
-            if reg.casefold() == "pc":
-              num2 = 15
-            elif reg.casefold() == "lr":
-              num2 = 14
+            reg_rn = line_elem[2].rstrip(",")
+            if reg_rn.casefold() == "pc":
+              rn = 15
+            elif reg_rn.casefold() == "lr":
+              rn = 14
             else:
-              num2 = int(reg[1:])
-            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rd=num, rn=num2, shifter_operand=" ".join(line_elem[3:])))
+              rn = int(reg_rn[1:])
+            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rd=num, rn=rn, shifter_operand=" ".join(line_elem[3:])))
           else:
             print(f"ERROR 1 : {mnemonic}")
         elif mnemonic in branch_instruction_list:
@@ -65,7 +65,7 @@ class Parser:
           else:
             inst_objs.append(MemoryInstObj(line, inst_addr, mnemonic, rd=rd, address_mode=line_elem[2].strip()))
         else:
-          print("not found mnemonic: ", mnemonic)
+          print(f"not found mnemonic => {mnemonic}")
 
         self._inst_num += 1
 
@@ -75,7 +75,7 @@ class Parser:
 
   @staticmethod
   def cleaner(line: str):
-    return ((line.isspace() or len(line) == 0 or line.startswith(("@",";"))), line.rstrip())
+    return ((line.isspace() or len(line) == 0 or line.strip().startswith(("@"))), line.rstrip())
   
   @staticmethod
   def is_directives(line: str):
