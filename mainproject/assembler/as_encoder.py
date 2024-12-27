@@ -1,4 +1,4 @@
-from as_obj import InstructionObj
+from as_obj import *
 from define import *
 
 class Encoder:
@@ -9,19 +9,25 @@ class Encoder:
     self.encoding_bits = 0x00000000
     # Now, use only always condition
     self.set_condition_flag_bit("al")
-    if obj.is_type1_dataprocessing() or obj.is_type2_dataprocessing() or obj.is_type3_dataprocessing():
+    if obj.type == "data_processing":
       self.data_processing_encoding(obj)
-    elif obj.is_branch():
+    elif obj.type == "branch":
       self.branch_encoding(obj)
+    elif obj.type == "multiply":
+      self.multiply_encoding(obj)
     # print(f"0b{self.encoding_bits:32b} [0x{self.encoding_bits:4x}] {obj.line_string}")
     return obj.addr, self.encoding_bits
 
-  def data_processing_encoding(self, obj: InstructionObj):
+  def data_processing_encoding(self, obj: DataProcessingInstObj):
     self.set_bit(0, 27)
     self.set_bit(0, 26)
 
     self.set_bit(data_opcode_map[obj.name], 21)
-    self.set_bit(0, 20) # s bit, now 0
+
+    if obj.name == "teq" or obj.name == "tst" or obj.name == "cmp":
+      self.set_bit(1,20)
+    else:
+      self.set_bit(0, 20) # s bit, now 0
 
     self.set_bit(obj.rn, 16)
     self.set_bit(obj.rd, 12)
@@ -34,7 +40,7 @@ class Encoder:
       self.set_bit(0x00, 4)
       self.set_bit(obj.shifter_obj.rm, 0)
 
-  def branch_encoding(self, obj: InstructionObj):
+  def branch_encoding(self, obj: BranchInstObj):
     self.set_bit(1, 27)
     self.set_bit(0, 26)
     self.set_bit(1, 25)
@@ -50,8 +56,15 @@ class Encoder:
   def memory_encoding(self):
     pass
 
-  def multiply_encoding(self):
-    pass
+  def multiply_encoding(self, obj: MultiplyInstObj):
+    self.set_bit(0b0000000, 21)
+    self.set_bit(0, 20) # depending on cpsr
+    self.set_bit(obj.rd, 16)
+    self.set_bit(0x0,12)
+    self.set_bit(obj.rs, 8)
+    self.set_bit(0b1001, 4)
+    self.set_bit(obj.rm & 0xf, 0)
+    
 
   def set_condition_flag_bit(self, name: str):
     self.encoding_bits |= condition_code_map[name] << 28

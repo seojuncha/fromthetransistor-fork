@@ -26,7 +26,6 @@ def check(path):
   objs = p.parse()
   e = Encoder()
   for o in objs:
-    # o.dump()
     addr, bits = e.encode(o)
     comp2[addr] = bits
 
