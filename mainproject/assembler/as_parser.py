@@ -20,19 +20,33 @@ class Parser:
         self._not_support_count += 1
       else:
         inst_addr = self._inst_num * 4
-        # print(f"CREATE [addr: 0x{inst_addr:x}]\t{line_string:<80}")
+        line = " ".join(line.split())
         line_elem = line.split(" ")
         mnemonic = line_elem[0].casefold()
 
+        print(line_elem)
+
         if mnemonic in data_opcode_map.keys():
-          num = int(line_elem[1].rstrip(",")[1:])
+          reg = line_elem[1].rstrip(",")
+          if reg.casefold() == "pc":
+            num = 15
+          elif reg.casefold() == "lr":
+            num = 14
+          else:
+            num = int(reg[1:])
           if mnemonic in data_processing_type1_list:
-            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rd=num, shifter_operand=line_elem[2]))
+            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rd=num, shifter_operand=" ".join(line_elem[2:])))
           elif mnemonic in data_processing_type2_list:
-            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rn=num, shifter_operand=line_elem[2]))
+            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rn=num, shifter_operand=" ".join(line_elem[2:])))
           elif mnemonic in data_processing_type3_list:
             num2 = int(line_elem[2].rstrip(",")[1:])
-            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rd=num, rn=num2, shifter_operand=line_elem[3]))
+            if reg.casefold() == "pc":
+              num2 = 15
+            elif reg.casefold() == "lr":
+              num2 = 14
+            else:
+              num2 = int(reg[1:])
+            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rd=num, rn=num2, shifter_operand=" ".join(line_elem[3:])))
           else:
             print(f"ERROR 1 : {mnemonic}")
         elif mnemonic in branch_instruction_list:

@@ -4,7 +4,7 @@ from as_parser import Parser
 from as_encoder import Encoder
 
 if __name__ == "__main__":
-  p = Parser("sample/from-chatgpt/load_store.s")
+  p = Parser("sample/from-chatgpt/move.s")
   objs = p.parse()
   e = Encoder()
 

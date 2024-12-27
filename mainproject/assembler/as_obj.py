@@ -82,10 +82,12 @@ class ShifterOperandObj:
     self.rm = 0
     self.imm = 0
     self.shifter = None
-    self.shift_imm = 0
-    self.rs = 0
+    self.shift_imm = None
+    self.rs = None
 
     operands = [ opr.strip() for opr in shifter_operand.split(",") ]
+
+    print("OOOOO:", operands)
 
     if len(operands) == 1:
       if operands[0].startswith("#"):
@@ -99,14 +101,26 @@ class ShifterOperandObj:
           self.imm = int(imm)
       else:
         self.is_only_reg = True
-        self.rm = int(operands[0][1:])
+        if operands[0].casefold() == "pc":
+          self.rm = 15
+        elif operands[0].casefold() == "lr":
+          self.rm = 14
+        else:
+          self.rm = int(operands[0][1:])
     else:
-      self.rm = int(operands[0][1:])
+      if operands[0].casefold() == "pc":
+          self.rm = 15
+      elif operands[0].casefold() == "lr":
+        self.rm = 14
+      else:
+        self.rm = int(operands[0][1:])
+
       shifter_split = operands[1].split(" ")
+      print("shifter split:", shifter_split)
       if len(shifter_split) == 1:
         self.is_rrx = True
       else:
-        self.shifter = shifter_split[0]
+        self.shifter = shifter_split[0].casefold()
         if shifter_split[1].startswith("#"):
           self.shift_imm = int(shifter_split[1][1:])
         else:

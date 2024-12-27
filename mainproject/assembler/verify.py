@@ -29,13 +29,23 @@ def check(path):
     addr, bits = e.encode(o)
     comp2[addr] = bits
 
+  success = []
+  fail = []
   for address, (opstr, instruction) in comp1.items():
     if address in comp2.keys():
       if instruction != comp2.get(address):
-        print(f"NOT MATCH [{opstr:<14}]\t{instruction:8x}\t{comp2.get(address):8x}")
+        fail.append(f"[{opstr:<14}]\t{instruction:8x}\t{comp2.get(address):8x}")
+      else:
+        success.append(f"[{opstr:<14}]\t{instruction:8x}\t{comp2.get(address):8x}")
     else:
-      print(f"no address error: {hex(address):08x}")
+      fail.append(f"no address error: {hex(address):08x}")
 
+  print("="*20+"SUCCESS: "+str(len(success))+"="*20)
+  for s in success:
+    print(s)
+  print("="*20+"FAIL: "+str(len(fail))+"="*20)
+  for f in fail:
+    print(f)
 
 if __name__ == "__main__":
-  check("sample/from-chatgpt/load_store")
+  check("sample/from-chatgpt/move")
