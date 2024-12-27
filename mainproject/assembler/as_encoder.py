@@ -58,6 +58,26 @@ class Encoder:
           self.set_bit(obj.shifter_obj.rs & 0xf, 8)
           self.set_bit(1, 5)
           self.set_bit(1, 4)
+      elif obj.shifter_obj.shifter == "asr":
+        if obj.shifter_obj.shift_imm:
+          self.set_bit(obj.shifter_obj.shift_imm & 0x1f, 7)
+          self.set_bit(1, 6)
+        elif obj.shifter_obj.rs:
+          self.set_bit(obj.shifter_obj.rs & 0xf, 8)
+          self.set_bit(1, 6)
+          self.set_bit(1, 4)
+      elif obj.shifter_obj.shifter == "ror":
+        if obj.shifter_obj.shift_imm:
+          self.set_bit(obj.shifter_obj.shift_imm & 0x1f, 7)
+          self.set_bit(1, 6)
+          self.set_bit(1, 5)
+        elif obj.shifter_obj.rs:
+          self.set_bit(obj.shifter_obj.rs & 0xf, 8)
+          self.set_bit(1, 6)
+          self.set_bit(1, 5)
+          self.set_bit(1, 4)
+      elif obj.shifter_obj.shifter == "rrx":
+        self.set_bit(0b11, 5)
 
   def branch_encoding(self, obj: BranchInstObj):
     self.set_bit(1, 27)

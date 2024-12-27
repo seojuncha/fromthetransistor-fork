@@ -78,7 +78,6 @@ class ShifterOperandObj:
   def __init__(self, shifter_operand: str):
     self.is_only_imm = False
     self.is_only_reg = False
-    self.is_rrx = False
     self.rm = 0
     self.imm = 0
     self.shifter = None
@@ -118,7 +117,7 @@ class ShifterOperandObj:
       shifter_split = operands[1].split(" ")
       print("shifter split:", shifter_split)
       if len(shifter_split) == 1:
-        self.is_rrx = True
+        self.shifter = "rrx"
       else:
         self.shifter = shifter_split[0].casefold()
         if shifter_split[1].startswith("#"):
