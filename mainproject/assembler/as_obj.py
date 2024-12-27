@@ -51,6 +51,7 @@ class BranchInstObj(InstructionObj):
     print(f"[0x{self.addr:x}] {self.line_string:^50}")
     target_addr = f"0x{self.target_addr:x}" if self.target_addr is not None else "-"
     print(f"target addr\t[{target_addr}]")
+    print("="*60)
 
 class MultiplyInstObj(InstructionObj):
   def __init__(self,
@@ -89,7 +90,13 @@ class ShifterOperandObj:
     if len(operands) == 1:
       if operands[0].startswith("#"):
         self.is_only_imm = True
-        self.imm = int(operands[0][1:])
+        imm = operands[0][1:]
+        if imm.startswith("0x"):
+          self.imm = int(imm, 16)
+        elif imm.startswith("0b"):
+          self.imm = int(imm, 2)
+        else:
+          self.imm = int(imm)
       else:
         self.is_only_reg = True
         self.rm = int(operands[0][1:])
@@ -107,3 +114,148 @@ class ShifterOperandObj:
 
   def dump(self):
     print(f"imm\t[#{self.imm}]\t\trm\t[R{self.rm}]\nshifter\t[{self.shifter}]\t\tshift imm\t[#{self.shift_imm}]\trs\t[R{self.rs}]")
+
+class MemoryInstObj(InstructionObj):
+  def __init__(self,
+               line_string: str,
+               addr: int,
+               name: str,
+               rd: int,
+               address_mode: str):
+    super().__init__("memory", name, addr, line_string)
+    self.rd = rd  # Bit[15:12]
+    self.is_load = True if name[:3] == "ldr" else False  # L bit(20)
+    self.type_ver = None
+    self.addr_mod_obj = AddressModeObj(address_mode)
+
+  def dump(self):
+    print(f"[0x{self.addr:x}] {self.line_string:^50}")
+    print(f"rd\t[R{self.rd}]")
+    self.addr_mod_obj.dump()
+    print("="*60)
+
+class AddressModeObj:
+  """
+   only base register
+      [<Rn>]
+
+   literal pool
+      =<imm>
+
+   nine offset addressing mode
+   1. immediate offset/index
+    offset
+      [<Rn>, #+/-<offset_12>]
+    pre-index
+      [<Rn>, #+/-<offset_12>]!
+    post-index
+      [<Rn>], #+/-<offset_12>
+
+   2. register offset/index
+    offset
+      [<Rn>, +/-<Rm>]
+    pre-index
+      [<Rn>, +/-<Rm>]!
+    post-index
+      [<Rn>], +/-<Rm>
+
+   3. scaled register offset/index
+    offset
+      [<Rn>, +/-<Rm>, lsl #<shift_imm>]
+      [<Rn>, +/-<Rm>, lsr #<shift_imm>]
+      [<Rn>, +/-<Rm>, asr #<shift_imm>]
+      [<Rn>, +/-<Rm>, ror #<shift_imm>]
+      [<Rn>, +/-<Rm>, rrx]
+    pre-index
+      [<Rn>, +/-<Rm>, lsl #<shift_imm>]!
+      [<Rn>, +/-<Rm>, lsr #<shift_imm>]!
+      [<Rn>, +/-<Rm>, asr #<shift_imm>]!
+      [<Rn>, +/-<Rm>, ror #<shift_imm>]!
+      [<Rn>, +/-<Rm>, rrx]!
+    post-index
+      [<Rn>], +/-<Rm>, lsl #<shift_imm>
+      [<Rn>], +/-<Rm>, lsr #<shift_imm>
+      [<Rn>], +/-<Rm>, asr #<shift_imm>
+      [<Rn>], +/-<Rm>, ror #<shift_imm>
+      [<Rn>], +/-<Rm>, rrx
+  """
+  def __init__(self, addressing_mode: str):
+    self.is_imm_type = False
+    self.is_reg_type = False
+    self.is_scaled_reg_type = False
+
+    self.is_not_post_index = True   # P bit (24)
+    self.is_add_offset = True   # U bit (23)
+    self.is_unsigned_byte = False  # B bit (22)
+    self.is_need_write_back = False # W bit (21)
+
+    self.rn = None
+    self.rm = None
+    self.imm_12 = None
+    self.shifter = None
+
+    comma_split = addressing_mode.split(",")
+
+    if len(comma_split) == 1:  # base mode
+      self.type = "base"
+      self.rn = int(comma_split[0][2:-1])
+    else: # offset mode
+      if comma_split[0][0] == "[":
+        if comma_split[-1][-1] == "]":
+          self.type = "offset"
+          self.rn = int(comma_split[0][2:])
+        elif comma_split[0][-1] == "]":
+          self.type = "postindex"
+          self.is_not_post_index = False
+          self.rn = int(comma_split[0][2:-1])
+        elif comma_split[-1].endswith("]!"):
+          self.type = "preindex"
+          self.rn = int(comma_split[0][2:])
+      else:
+        print("invalid syntax")
+        return None
+    
+    if len(comma_split) > 2:
+      elem = comma_split[1].strip()
+      if elem.startswith("#"):
+        self.is_imm_type = True
+        if elem.startswith("#+"):
+          self.imm_12 = int(elem[0][2:])
+          if self.type == "offset":
+            self.imm_12 = self.imm_12[:-1]
+          if self.type == "preindex":
+            self.imm_12 = self.imm_12[:-2]
+        elif elem.startswith("#-"):
+          self.imm_12 = int(elem[0][2:])
+          if self.type == "offset":
+            self.imm_12 = self.imm_12[:-1]
+          if self.type == "preindex":
+            self.imm_12 = self.imm_12[:-2]
+        else:
+          self.imm_12 = int(elem[0][1:])
+      elif elem.casefold().startswith("r"):
+        self.is_reg_type = True
+        self.rm = int(elem[0][1:])
+      elif elem.casefold().startswith("+r"):
+        self.rm = int(elem[0][2:])
+      elif elem.casefold().startswith("-r"):
+        self.rm = int(elem[0][2:])
+        self.is_add_offset = False
+
+      if len(comma_split) == 3:
+        elem2 = comma_split[2].strip()
+        shifter_split = elem2.split(" ")
+        self.shifter = shifter_split[0].strip()
+        if len(shifter_split) > 1:
+          self.shift_imm = int(shifter_split[1][1:])
+        else:
+          self.shift_imm = 0
+
+  def dump(self):
+    print(f"address type\t[{self.type}]")
+    rn = f"R{self.rn}" if self.rn is not None else "-"
+    rm = f"R{self.rm}" if self.rm is not None else "-"
+    imm_12 = f"#{self.imm_12}" if self.imm_12 is not None else "-"
+    print(f"rn\t[{rn}]\t\trm\t[{rm}]\t\timm\t[{imm_12}]")
+    if self.shifter:
+      print(f"shifter\t[{self.shifter}]\t\tshift imm\t[#{self.shift_imm}]")

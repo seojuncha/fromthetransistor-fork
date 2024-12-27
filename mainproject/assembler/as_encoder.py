@@ -15,6 +15,8 @@ class Encoder:
       self.branch_encoding(obj)
     elif obj.type == "multiply":
       self.multiply_encoding(obj)
+    elif obj.type == "memory":
+      self.memory_encoding(obj)
     # print(f"0b{self.encoding_bits:32b} [0x{self.encoding_bits:4x}] {obj.line_string}")
     return obj.addr, self.encoding_bits
 
@@ -64,7 +66,37 @@ class Encoder:
     self.set_bit(obj.rs, 8)
     self.set_bit(0b1001, 4)
     self.set_bit(obj.rm & 0xf, 0)
+
+  def memory_encoding(self, obj: MemoryInstObj):
+    self.set_bit(0b01, 26)  # only for word and unsigned byte
+    self.set_bit(obj.rd, 12)
+
+    if obj.is_load:
+      self.set_bit(1, 20)  # L bit
+    if obj.addr_mod_obj.is_need_write_back:
+      self.set_bit(1, 21)  # W bit
+    if obj.addr_mod_obj.is_unsigned_byte:
+      self.set_bit(1, 22)  # B bit
+    if obj.addr_mod_obj.is_add_offset:
+      self.set_bit(1, 23)  # U bit
+    if obj.addr_mod_obj.is_not_post_index:
+      self.set_bit(1, 24)  # P bit
     
+    self.set_bit(obj.addr_mod_obj.rn & 0xf, 16)
+
+    if obj.addr_mod_obj.type == "base":
+      return
+
+    if obj.addr_mod_obj.type == "offset":
+      if obj.addr_mod_obj.is_imm_type:
+        self.set_bit(obj.addr_mod_obj.imm_12 & 0xfff, 0)
+      elif obj.addr_mod_obj.is_reg_type:
+        self.set_bit(obj.addr_mod_obj.rm & 0xf, 0)
+      else:
+        self.set_bit(obj.addr_mod_obj.shift_imm & 0x1f, 7)
+        self.set_bit(shift_code_map[obj.addr_mod_obj.shifter], 5)
+        self.set_bit(obj.addr_mod_obj.rm & 0xf, 0)
+
 
   def set_condition_flag_bit(self, name: str):
     self.encoding_bits |= condition_code_map[name] << 28

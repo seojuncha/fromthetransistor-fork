@@ -8,14 +8,14 @@ class Parser:
     self._inst_num = 0
 
   def parse(self) -> list[InstructionObj]:
-    objs = []
+    inst_objs = []
     for line in self._file.readlines():
       ret, line = Parser.cleaner(line)
       if ret: continue
 
       line = Parser.remove_line_comment(line)
       if Parser.is_directives(line):
-        pass
+        self._not_support_count += 1
       elif Parser.is_label(line):
         self._not_support_count += 1
       else:
@@ -27,34 +27,37 @@ class Parser:
         if mnemonic in data_opcode_map.keys():
           num = int(line_elem[1].rstrip(",")[1:])
           if mnemonic in data_processing_type1_list:
-            objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rd=num, shifter_operand=line_elem[2]))
+            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rd=num, shifter_operand=line_elem[2]))
           elif mnemonic in data_processing_type2_list:
-            objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rn=num, shifter_operand=line_elem[2]))
+            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rn=num, shifter_operand=line_elem[2]))
           elif mnemonic in data_processing_type3_list:
             num2 = int(line_elem[2].rstrip(",")[1:])
-            objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rd=num, rn=num2, shifter_operand=line_elem[3]))
+            inst_objs.append(DataProcessingInstObj(line, inst_addr, mnemonic, rd=num, rn=num2, shifter_operand=line_elem[3]))
           else:
             print(f"ERROR 1 : {mnemonic}")
-            return None
         elif mnemonic in branch_instruction_list:
-          if len(line_elem) != 2:
-            print(f"ERROR 2 : {mnemonic}")
-            return None
-          objs.append(BranchInstObj(line, inst_addr, mnemonic, target_addr=line_elem[1]))
+          if len(line_elem) == 2:
+            inst_objs.append(BranchInstObj(line, inst_addr, mnemonic, target_addr=line_elem[1]))
         elif mnemonic in multiply_instruction_list:
           rd = int(line_elem[1].rstrip(",")[1:])
           rm = int(line_elem[2].rstrip(",")[1:])
           rs = int(line_elem[3].rstrip(",")[1:])
-          objs.append(MultiplyInstObj(line, inst_addr, mnemonic, rd=rd, rm=rm, rs=rs))
+          inst_objs.append(MultiplyInstObj(line, inst_addr, mnemonic, rd=rd, rm=rm, rs=rs))
         elif mnemonic in memory_instruction_list:
-          return None
+          rd = int(line_elem[1].rstrip(",")[1:])
+          if line_elem[2].startswith("="):
+            mov_imm = line_elem[2].replace("=", "#")
+            inst_objs.append(DataProcessingInstObj(line, inst_addr, "mov", rd=rd, shifter_operand=mov_imm))
+          else:
+            inst_objs.append(MemoryInstObj(line, inst_addr, mnemonic, rd=rd, address_mode=line_elem[2].strip()))
         else:
-          return None
+          print("not found mnemonic: ", mnemonic)
+
         self._inst_num += 1
 
     self._file.close()
 
-    return objs
+    return inst_objs
 
   @staticmethod
   def cleaner(line: str):

@@ -22,7 +22,7 @@ def check(path):
       comp1[instruction.address] = (f"{instruction.mnemonic} {instruction.op_str}", inst)
 
   comp2 = dict()
-  p = Parser("sample/from-chatgpt/data_processing.s")
+  p = Parser(path+".s")
   objs = p.parse()
   e = Encoder()
   for o in objs:
@@ -38,4 +38,4 @@ def check(path):
 
 
 if __name__ == "__main__":
-  check("sample/from-chatgpt/objdir/data_processing")
+  check("sample/from-chatgpt/load_store")

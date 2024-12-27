@@ -50,5 +50,5 @@ data_processing_type3_list = ["add", "sub", "rsb", "adc", "sbc", "rsc", "and", "
 
 branch_instruction_list = ["b", "bl", "blx", "bx"]
 multiply_instruction_list = ["mla", "mul", "smlal", "smull", "umlal", "umull"]
-memory_instruction_list = ["ldr", "ldrb", "ldrbt", "ldrh", "ldrsb", "ldrsh", "ldrt", 
-                           "str", "strb", "strbt", "strh", "strt"]
+memory_instruction_list = ["ldr", "str", "ldrb", "strb","ldrbt", "strbt",       # load/store word or unsigned byte
+                           "ldrh", "strh", "ldrsb", "strsb", "ldrsh", "strsh"]  # load/store halfword or long signed byte
