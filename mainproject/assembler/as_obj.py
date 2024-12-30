@@ -206,57 +206,58 @@ class AddressModeObj:
     self.rm = None
     self.imm_12 = None
     self.shifter = None
+    self.shift_imm = None
 
-    comma_split = addressing_mode.split(",")
+    comma_split = [ s.strip() for s in addressing_mode.split(",") ]
+    print(f"SPLIT {comma_split}")
 
     if len(comma_split) == 1:  # base mode
       self.type = "base"
       self.rn = int(comma_split[0][2:-1])
     else: # offset mode
       if comma_split[0][0] == "[":
+        comma_split[0] = comma_split[0][1:]
         if comma_split[-1][-1] == "]":
           self.type = "offset"
-          self.rn = int(comma_split[0][2:])
+          comma_split[-1] = comma_split[-1][:-1]
         elif comma_split[0][-1] == "]":
           self.type = "postindex"
           self.is_not_post_index = False
-          self.rn = int(comma_split[0][2:-1])
+          comma_split[0] = comma_split[0][:-1]
         elif comma_split[-1].endswith("]!"):
           self.type = "preindex"
-          self.rn = int(comma_split[0][2:])
+          comma_split[-1] = comma_split[-1][:-2]
+        print(f"SPLIT2 {comma_split}")
+        self.rn = int(comma_split[0][1:])
       else:
         print("invalid syntax")
         return None
     
-    if len(comma_split) > 2:
-      elem = comma_split[1].strip()
+    if len(comma_split) >= 2:
+      elem = comma_split[1]
       if elem.startswith("#"):
         self.is_imm_type = True
         if elem.startswith("#+"):
-          self.imm_12 = int(elem[0][2:])
-          if self.type == "offset":
-            self.imm_12 = self.imm_12[:-1]
-          if self.type == "preindex":
-            self.imm_12 = self.imm_12[:-2]
+          self.imm_12 = int(elem[2:])
         elif elem.startswith("#-"):
-          self.imm_12 = int(elem[0][2:])
-          if self.type == "offset":
-            self.imm_12 = self.imm_12[:-1]
-          if self.type == "preindex":
-            self.imm_12 = self.imm_12[:-2]
+          self.imm_12 = int(elem[2:])
+          self.is_add_offset = False
         else:
-          self.imm_12 = int(elem[0][1:])
+          self.imm_12 = int(elem[1:])
       elif elem.casefold().startswith("r"):
-        self.is_reg_type = True
-        self.rm = int(elem[0][1:])
+        self.rm = int(elem[1:])
       elif elem.casefold().startswith("+r"):
-        self.rm = int(elem[0][2:])
+        self.rm = int(elem[2:])
       elif elem.casefold().startswith("-r"):
-        self.rm = int(elem[0][2:])
+        self.rm = int(elem[2:])
         self.is_add_offset = False
 
+      if len(comma_split) == 2:
+        self.is_reg_type = True
+
       if len(comma_split) == 3:
-        elem2 = comma_split[2].strip()
+        self.is_scaled_reg_type = True
+        elem2 = comma_split[2]
         shifter_split = elem2.split(" ")
         self.shifter = shifter_split[0].strip()
         if len(shifter_split) > 1:
@@ -269,6 +270,7 @@ class AddressModeObj:
     rn = f"R{self.rn}" if self.rn is not None else "-"
     rm = f"R{self.rm}" if self.rm is not None else "-"
     imm_12 = f"#{self.imm_12}" if self.imm_12 is not None else "-"
+    shifter = f"#{self.shift_imm}" if self.shift_imm is not None else "-"
+    shift_imm = f"{self.shifter}" if self.shifter is not None else "-"
     print(f"rn\t[{rn}]\t\trm\t[{rm}]\t\timm\t[{imm_12}]")
-    if self.shifter:
-      print(f"shifter\t[{self.shifter}]\t\tshift imm\t[#{self.shift_imm}]")
+    print(f"shifter\t[{shifter}]\t\tshift imm\t[{shift_imm}]")

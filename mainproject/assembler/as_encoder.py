@@ -118,21 +118,24 @@ class Encoder:
       self.set_bit(1, 23)  # U bit
     if obj.addr_mod_obj.is_not_post_index:
       self.set_bit(1, 24)  # P bit
-    
+      if obj.addr_mod_obj.type == "preindex":
+        self.set_bit(1, 21)  # W bit
+
     self.set_bit(obj.addr_mod_obj.rn & 0xf, 16)
 
     if obj.addr_mod_obj.type == "base":
       return
 
-    if obj.addr_mod_obj.type == "offset":
-      if obj.addr_mod_obj.is_imm_type:
+    if obj.addr_mod_obj.is_imm_type:
         self.set_bit(obj.addr_mod_obj.imm_12 & 0xfff, 0)
-      elif obj.addr_mod_obj.is_reg_type:
-        self.set_bit(obj.addr_mod_obj.rm & 0xf, 0)
-      else:
-        self.set_bit(obj.addr_mod_obj.shift_imm & 0x1f, 7)
-        self.set_bit(shift_code_map[obj.addr_mod_obj.shifter], 5)
-        self.set_bit(obj.addr_mod_obj.rm & 0xf, 0)
+    elif obj.addr_mod_obj.is_reg_type:
+      self.set_bit(1, 25)
+      self.set_bit(obj.addr_mod_obj.rm & 0xf, 0)
+    elif obj.addr_mod_obj.is_scaled_reg_type:
+      self.set_bit(1, 25)
+      self.set_bit(obj.addr_mod_obj.shift_imm & 0x1f, 7)
+      self.set_bit(shift_code_map[obj.addr_mod_obj.shifter], 5)
+      self.set_bit(obj.addr_mod_obj.rm & 0xf, 0)
 
 
   def set_condition_flag_bit(self, name: str):
@@ -150,11 +153,19 @@ class Encoder:
     # rotate_imm[11:8] - 4 bits
     # immed_8[7:0] - 8 bits
     # 4-bit rotate_imm : 16 cases
+    ro_dict = dict()
     for i in range(16):
       # get 8-bit to find a proper immed_8 value
       imm8 = (imm >> (2*i)) & 0xff
-      # must represent a value in 32-bit word
-      rotated_imm = (imm8 << (2*i)) | (imm8 >> 32-(2*i)) & 0xffffffff
-      if rotated_imm == imm:
-        self.set_bit(rotated_imm & 0xf, 8)
-        self.set_bit(imm8 & 0xff, 0)
+      # print(f"imm_8: {imm8:08b}")
+      for rotate_imm in range(16):
+        # must represent a value in 32-bit word
+        rotated = ((imm8 >> (2*rotate_imm)) | (imm8 << 32-(2*rotate_imm))) & 0xffff_ffff
+        # print(f"[{rotate_imm}] ro: {rotated:032b}")
+        if rotated == imm:
+          # print(f"catch! {imm8:8b}[0x{imm8:02x}] / {rotate_imm:4b}")
+          ro_dict[rotate_imm] = imm8
+          
+    min_rotate_imm = min(ro_dict, key=ro_dict.get)
+    self.set_bit(min_rotate_imm & 0xf, 8)
+    self.set_bit(ro_dict[min_rotate_imm] & 0xff, 0)

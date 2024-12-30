@@ -49,5 +49,5 @@ def check(path):
     print(f)
 
 if __name__ == "__main__":
-  # check("sample/from-chatgpt/move")
+  # check("sample/from-chatgpt/load_store")
   check("sample/from-claude/arm-test-data")

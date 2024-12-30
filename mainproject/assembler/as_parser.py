@@ -63,7 +63,7 @@ class Parser:
             mov_imm = line_elem[2].replace("=", "#")
             inst_objs.append(DataProcessingInstObj(line, inst_addr, "mov", rd=rd, shifter_operand=mov_imm))
           else:
-            inst_objs.append(MemoryInstObj(line, inst_addr, mnemonic, rd=rd, address_mode=line_elem[2].strip()))
+            inst_objs.append(MemoryInstObj(line, inst_addr, mnemonic, rd=rd, address_mode=" ".join(line_elem[2:])))
         else:
           print(f"not found mnemonic => {mnemonic}")
 
