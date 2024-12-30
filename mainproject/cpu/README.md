@@ -118,3 +118,9 @@ end: : 0x0000_4FFF
 # convert raw binary data to text-based binary representation.
 $ xxd -b -c 4 data_processing.bin | awk '{print $2 $3 $4 $5}' > data_processing_txt.bin
 ```
+
+
+## cocotb execute
+```shell
+COCOTB_RESOLVE_X=ZEROS make
+```

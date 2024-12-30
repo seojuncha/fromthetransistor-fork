@@ -4,22 +4,22 @@ module cpu (
 );
   localparam IDLE = 2'b00, FETCH = 2'b01, DECODE = 2'b10, EXECUTE = 2'b11;
 
-  localparam DATA_PROCESSING_AND = 4'b0000,
-             DATA_PROCESSING_EOR = 4'b0001,
-             DATA_PROCESSING_SUB = 4'b0010,
-             DATA_PROCESSING_RSB = 4'b0011,
-             DATA_PROCESSING_ADD = 4'b0100,
-             DATA_PROCESSING_ADC = 4'b0101,
-             DATA_PROCESSING_SBC = 4'b0110,
-             DATA_PROCESSING_RSC = 4'b0111,
-             DATA_PROCESSING_TST = 4'b1000,
-             DATA_PROCESSING_TEQ = 4'b1001,
-             DATA_PROCESSING_CMP = 4'b1010,
-             DATA_PROCESSING_CMN = 4'b1011,
-             DATA_PROCESSING_ORR = 4'b1100,
-             DATA_PROCESSING_MOV = 4'b1101,
-             DATA_PROCESSING_BIC = 4'b1110,
-             DATA_PROCESSING_MVN = 4'b1111;
+  localparam OP_CODE_AND = 4'b0000,
+             OP_CODE_EOR = 4'b0001,
+             OP_CODE_SUB = 4'b0010,
+             OP_CODE_RSB = 4'b0011,
+             OP_CODE_ADD = 4'b0100,
+             OP_CODE_ADC = 4'b0101,
+             OP_CODE_SBC = 4'b0110,
+             OP_CODE_RSC = 4'b0111,
+             OP_CODE_TST = 4'b1000,
+             OP_CODE_TEQ = 4'b1001,
+             OP_CODE_CMP = 4'b1010,
+             OP_CODE_CMN = 4'b1011,
+             OP_CODE_ORR = 4'b1100,
+             OP_CODE_MOV = 4'b1101,
+             OP_CODE_BIC = 4'b1110,
+             OP_CODE_MVN = 4'b1111;
 
 
   reg [1:0] state;
@@ -57,7 +57,7 @@ module cpu (
         // data processing
         if (ir[27:26] == 2'b00) begin
           case (ir[24:21])
-            DATA_PROCESSING_MOV, DATA_PROCESSING_MVN: begin
+            OP_CODE_MOV, OP_CODE_MVN: begin
               if (ir[25] == 1'b1) begin // 32-bit immediate
                 register[ir[15:12]] <= (ir[7:0] >> (ir[11:8] * 2)) | (ir[7:0] << (32 - (ir[11:8] * 2)));
               end else begin
@@ -87,6 +87,8 @@ module cpu (
     next_state = state;
     case (state)
       IDLE: begin
+        sp = 32'h0000_0000;
+        lr = 32'h0000_0000;
         pc = 32'h0000_0000;
         next_state = IDLE;
         if (bram_enable)
