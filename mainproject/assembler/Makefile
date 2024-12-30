@@ -1,11 +1,14 @@
 OS := $(shell uname)
 
-SAMPLE_DIR := sample/from-claude
-#SAMPLE_DIR := sample/from-chatgpt
+SAMPLE_DIR1 := sample/from-claude
+SAMPLE_DIR2 := sample/from-chatgpt
 
-SRC_FILES := $(wildcard $(SAMPLE_DIR)/*.s)
-OBJ_FILES := $(patsubst $(SAMPLE_DIR)/%.s, $(SAMPLE_DIR)/%.o, $(SRC_FILES))
-BIN_FILES := $(patsubst $(SAMPLE_DIR)/%.s, $(SAMPLE_DIR)/%.bin, $(SRC_FILES))
+SRC_FILES1 := $(wildcard $(SAMPLE_DIR1)/*.s)
+SRC_FILES2 := $(wildcard $(SAMPLE_DIR2)/*.s)
+OBJ_FILES1 := $(patsubst $(SAMPLE_DIR1)/%.s, $(SAMPLE_DIR1)/%.o, $(SRC_FILES1))
+OBJ_FILES2 := $(patsubst $(SAMPLE_DIR2)/%.s, $(SAMPLE_DIR2)/%.o, $(SRC_FILES2))
+BIN_FILES1 := $(patsubst $(SAMPLE_DIR1)/%.s, $(SAMPLE_DIR1)/%.bin, $(SRC_FILES1))
+BIN_FILES2 := $(patsubst $(SAMPLE_DIR2)/%.s, $(SAMPLE_DIR2)/%.bin, $(SRC_FILES2))
 
 ifeq ($(OS), Linux)
 	AS = arm-none-eabi-as
@@ -22,14 +25,21 @@ else
 	exit 1
 endif
 
-all: $(BIN_FILES) $(OBJ_FILES)
+all: $(BIN_FILES2) $(OBJ_FILES2) $(BIN_FILES1) $(OBJ_FILES1)
 
-$(SAMPLE_DIR)/%.bin: $(SAMPLE_DIR)/%.o
+$(SAMPLE_DIR1)/%.bin: $(SAMPLE_DIR1)/%.o
 	$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
 
-$(SAMPLE_DIR)/%.o: $(SAMPLE_DIR)/%.s
+$(SAMPLE_DIR1)/%.o: $(SAMPLE_DIR1)/%.s
+	$(AS) $(AS_FLAGS) $@ $<
+
+$(SAMPLE_DIR2)/%.bin: $(SAMPLE_DIR2)/%.o
+	$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
+
+$(SAMPLE_DIR2)/%.o: $(SAMPLE_DIR2)/%.s
 	$(AS) $(AS_FLAGS) $@ $<
 
 .PHONY: clean
 clean:
-	rm -rf $(SAMPLE_DIR)/*.o $(SAMPLE_DIR)/*.bin
+	rm -rf $(SAMPLE_DIR1)/*.o $(SAMPLE_DIR1)/*.bin
+	rm -rf $(SAMPLE_DIR2)/*.o $(SAMPLE_DIR2)/*.bin

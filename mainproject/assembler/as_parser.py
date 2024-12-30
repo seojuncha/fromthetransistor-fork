@@ -6,8 +6,11 @@ class Parser:
     self._file = open(filepath, "r")
     self._not_support_count = 0
     self._inst_num = 0
+    self._label_map = dict()
 
   def parse(self) -> list[InstructionObj]:
+    self.parse_label()
+
     inst_objs = []
     for line in self._file.readlines():
       ret, line = Parser.cleaner(line)
@@ -17,7 +20,7 @@ class Parser:
       if Parser.is_directives(line):
         self._not_support_count += 1
       elif Parser.is_label(line):
-        self._not_support_count += 1
+        continue
       else:
         inst_addr = self._inst_num * 4
         line = " ".join(line.split()).strip()
@@ -51,7 +54,12 @@ class Parser:
             print(f"ERROR 1 : {mnemonic}")
         elif mnemonic in branch_instruction_list:
           if len(line_elem) == 2:
-            inst_objs.append(BranchInstObj(line, inst_addr, mnemonic, target_addr=line_elem[1]))
+            branch_name = line_elem[1]
+            if branch_name == ".":
+              target_addr = inst_addr
+            else:
+              target_addr = self._label_map.get(branch_name)
+            inst_objs.append(BranchInstObj(line, inst_addr, mnemonic, target_addr=target_addr))
         elif mnemonic in multiply_instruction_list:
           rd = int(line_elem[1].rstrip(",")[1:])
           rm = int(line_elem[2].rstrip(",")[1:])
@@ -72,6 +80,21 @@ class Parser:
     self._file.close()
 
     return inst_objs
+  
+  def parse_label(self):
+    label_addr = 0
+    i = 0
+    for line in self._file.readlines():
+      ret, line = Parser.cleaner(line)
+      if ret: continue
+      if Parser.is_directives(line):
+        continue
+      if not Parser.is_label(line):
+        label_addr += 4
+        continue
+      line = Parser.remove_line_comment(line)
+      self._label_map[line[:-1]] = label_addr
+    self._file.seek(0)
 
   @staticmethod
   def cleaner(line: str):

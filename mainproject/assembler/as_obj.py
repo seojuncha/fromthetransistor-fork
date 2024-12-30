@@ -42,10 +42,10 @@ class BranchInstObj(InstructionObj):
                line_string: str, 
                addr: int, 
                name: str, 
-               target_addr: str):
+               target_addr: int):
     super().__init__("branch", name, addr, line_string)
-    self.target_addr = None
-    if target_addr:  self.target_addr = addr if target_addr == "." else int(target_addr[1:])
+    self.target_addr = target_addr
+    self.is_link = True if name == "bl" else False
 
   def dump(self):
     print(f"[0x{self.addr:x}] {self.line_string:^50}")
@@ -274,3 +274,13 @@ class AddressModeObj:
     shift_imm = f"{self.shifter}" if self.shifter is not None else "-"
     print(f"rn\t[{rn}]\t\trm\t[{rm}]\t\timm\t[{imm_12}]")
     print(f"shifter\t[{shifter}]\t\tshift imm\t[{shift_imm}]")
+
+
+class LabelObj:
+  def __init__(self,
+               name: str,
+               addr: int,
+               insts: list[InstructionObj]):
+    self.name = name
+    self.addr = addr
+    self.insts = insts

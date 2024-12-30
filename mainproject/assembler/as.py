@@ -4,7 +4,7 @@ from as_parser import Parser
 from as_encoder import Encoder
 
 if __name__ == "__main__":
-  p = Parser("sample/from-claude/arm-test-memory.s")
+  p = Parser("sample/from-chatgpt/branch.s")
   objs = p.parse()
   e = Encoder()
 
