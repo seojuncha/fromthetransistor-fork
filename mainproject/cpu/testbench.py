@@ -15,6 +15,7 @@ async def tb_cpu(dut):
   await Timer(10, units="ns")
   dut.n_reset.value = 1
   dut.bram_enable.value = 1
+  dut.little_endian.value = 1
 
   for i in range(13):
     await FallingEdge(dut.clk)

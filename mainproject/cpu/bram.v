@@ -11,7 +11,8 @@ module bram (
   // test fetch process only
   // explicitely copy a binary file into a current working directory.
   initial begin
-    $readmemb("big-mov.bin", memory);
+    // $readmemb("big-mov.bin", memory);
+    $readmemb("little-mov.bin", memory);
   end
 
   always @(posedge clk) begin

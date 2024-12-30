@@ -44,6 +44,8 @@ module cpu (
   reg bram_enable;
   wire [17:0] bram_addr;
 
+  reg little_endian;
+
   initial begin
     $monitor("[%0t] PC [%x] INST [0x%8x]",$time, pc, ir);
   end
@@ -92,7 +94,10 @@ module cpu (
         $display("IDLE");
       end
       FETCH: begin
-        ir = data_in;
+        if (little_endian)  // for convinent, little->big
+          ir = (data_in[7:0] << 24) | (data_in[15:8] << 16) | (data_in[23:16] << 8) | (data_in[31:24]);
+        else
+          ir = data_in;
         pc = pc + 4;
         next_state = DECODE;
         $display("FETCH");
