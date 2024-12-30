@@ -2,6 +2,9 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Timer
 
+async def print_register_map(dut):
+  dut._log.info(f"R0 [{dut.register[0].value.binstr}] R1 [{dut.register[1].value.binstr}]")
+
 
 @cocotb.test()
 async def tb_cpu(dut):
@@ -16,3 +19,4 @@ async def tb_cpu(dut):
   for i in range(13):
     await FallingEdge(dut.clk)
     dut._log.info(f"[0x{int(dut.pc.value):<3x}] data_in [{dut.data_in.value}]")
+    await print_register_map(dut)
