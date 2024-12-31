@@ -124,3 +124,17 @@ $ xxd -b -c 4 data_processing.bin | awk '{print $2 $3 $4 $5}' > data_processing_
 ```shell
 COCOTB_RESOLVE_X=ZEROS make
 ```
+
+
+## Shifter
+### Shifter Carry Out
+Examples,<br>
+```python
+>>> bin(0b1100 << 1)
+0b11000  # out of range of 4-bit, carry out!
+>>> bin(0b0110 << 1)
+0b1100   # keep 4-bit, not carry out.
+```
+
+
+## ALU

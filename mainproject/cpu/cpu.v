@@ -3,25 +3,6 @@ module cpu (
   input n_reset
 );
   localparam IDLE = 2'b00, FETCH = 2'b01, DECODE = 2'b10, EXECUTE = 2'b11;
-
-  localparam OP_CODE_AND = 4'b0000,
-             OP_CODE_EOR = 4'b0001,
-             OP_CODE_SUB = 4'b0010,
-             OP_CODE_RSB = 4'b0011,
-             OP_CODE_ADD = 4'b0100,
-             OP_CODE_ADC = 4'b0101,
-             OP_CODE_SBC = 4'b0110,
-             OP_CODE_RSC = 4'b0111,
-             OP_CODE_TST = 4'b1000,
-             OP_CODE_TEQ = 4'b1001,
-             OP_CODE_CMP = 4'b1010,
-             OP_CODE_CMN = 4'b1011,
-             OP_CODE_ORR = 4'b1100,
-             OP_CODE_MOV = 4'b1101,
-             OP_CODE_BIC = 4'b1110,
-             OP_CODE_MVN = 4'b1111;
-
-
   reg [1:0] state;
   reg [1:0] next_state;
 
@@ -31,9 +12,24 @@ module cpu (
   reg [31:0] lr;  // R14
   reg [31:0] pc;  // R15
 
+  // interal registers to communicate with ALU
+  reg [31:0] alu_a;   // operand 1
+  reg [31:0] alu_b;   // operand 2(shifter operand)
+  reg [31:0] alu_out;  // result
+  reg carry_in;
+
+  // barrel shifter
+  reg [31:0] shift_value;
+  reg [4:0] shift_amt;
+  reg [1:0] shift_type;
+  reg shifter_carry_out;
+
+  // b[31]: Negative, b[30]: Zero, b[29]: Carry, b[28]: oVerflow
+  // Other bits always SBZ
   reg [31:0] cpsr;
 
-  reg [31:0] ir;  // instruction register
+  // instruction register
+  reg [31:0] ir;
 
   // interfaces
   wire [31:0] address;
@@ -46,30 +42,58 @@ module cpu (
 
   reg little_endian;
 
+  assign bram_addr = pc >> 2;
+
+  // modules
+  bram bram_inst (
+    .clk(clk),
+    .enable(bram_enable),
+    .address(bram_addr),
+    .data_out(data_in)
+  );
+
+  barrel_shifter barrel_shifter_inst(
+    .clk(clk),
+    .shift_in(shift_value),
+    .shift_type(shift_type),
+    .shift_imm(shift_amt),
+    .cary_in(carry_in),
+    .shifter_operand(alu_b),
+    .shift_carry_out(shifter_carry_out)
+  );
+
+  alu alu_inst (
+    .clk(clk),
+    .opcode(ir[24:21]),
+    .operand1(alu_a),
+    .operand2(alu_b),
+    .carry_in(carry_in),
+    .result(alu_out),
+    .negative_flag(cpsr[31]),
+    .zero_flag(cpsr[30]),
+    .carry_out_flag(cpsr[29])
+  );
+
+  // only for debug
   initial begin
     $monitor("[%0t] PC [%x] INST [0x%8x]",$time, pc, ir);
   end
 
-  always @(posedge clk or negedge n_reset) begin
+  always @(posedge clk) begin
     case (state)
       // skip condition flag
       DECODE: begin
         // data processing
         if (ir[27:26] == 2'b00) begin
-          case (ir[24:21])
-            OP_CODE_MOV, OP_CODE_MVN: begin
-              if (ir[25] == 1'b1) begin // 32-bit immediate
-                register[ir[15:12]] <= (ir[7:0] >> (ir[11:8] * 2)) | (ir[7:0] << (32 - (ir[11:8] * 2)));
-              end else begin
-              end
-            end
-          endcase
-        // load or store
-        end else if(ir[27:26] == 2'b01) begin
-
+          alu_a <= register[ir[19:16]];
+          // immediate, rotate_imm with imm_8
+          if (ir[25] == 1'b1) begin
+            
+          end
         end
       end
       EXECUTE: begin
+        register[ir[15:12]] <= alu_out;
       end
     endcase
     
@@ -87,9 +111,9 @@ module cpu (
     next_state = state;
     case (state)
       IDLE: begin
-        sp = 32'h0000_0000;
-        lr = 32'h0000_0000;
-        pc = 32'h0000_0000;
+        sp = 32'd0;
+        lr = 32'd0;
+        pc = 32'd0;
         next_state = IDLE;
         if (bram_enable)
           next_state = FETCH;
@@ -115,15 +139,6 @@ module cpu (
     endcase
   end
 
-  assign bram_addr = pc >> 2;
-
-  // modules
-  bram bram_inst (
-    .clk(clk),
-    .enable(bram_enable),
-    .address(bram_addr),
-    .data_out(data_in)
-    );
 
 
 endmodule
