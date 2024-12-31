@@ -79,6 +79,9 @@ class Encoder:
       elif obj.shifter_obj.shifter == "rrx":
         self.set_bit(0b11, 5)
 
+  def shift_operand_encoding(self, obj: ShifterOperandObj):
+    pass
+
   def branch_encoding(self, obj: BranchInstObj):
     self.set_bit(1, 27)
     self.set_bit(0, 26)

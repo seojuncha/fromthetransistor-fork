@@ -6,16 +6,16 @@ from cocotb.triggers import RisingEdge, FallingEdge, Timer
 async def tb_barrel_shifter(dut):
   # Prepare test data
   assembly_shift_operand_imm32 = (
-    "#1\n"
-    "#0xff\n"
+    "mov r0, #1\n"
+    "mov r1, #0xff\n"
   )
   assembly_shift_operand_reg = (
-    "r0\n"
-    "r1\n"
+    "mov r3 r0\n"
+    "mov r4 r1\n"
   )
   assembly_shift_operand_lsl_imm = (
-    "r0, lsl #1\n"
-    "r1, lsl #3\n"
+    "mov r5, r3, lsl #1\n"
+    "mov r6, r4, lsl #3\n"
   )
   assembly_shift_operand_lsl_rs = ()
   assembly_shift_operand_lsr_imm = ()
