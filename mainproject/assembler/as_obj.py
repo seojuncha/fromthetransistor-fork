@@ -86,7 +86,7 @@ class ShifterOperandObj:
 
     operands = [ opr.strip() for opr in shifter_operand.split(",") ]
 
-    print("OOOOO:", operands)
+    # print("OOOOO:", operands)
 
     if len(operands) == 1:
       if operands[0].startswith("#"):
@@ -115,7 +115,7 @@ class ShifterOperandObj:
         self.rm = int(operands[0][1:])
 
       shifter_split = operands[1].split(" ")
-      print("shifter split:", shifter_split)
+      # print("shifter split:", shifter_split)
       if len(shifter_split) == 1:
         self.shifter = "rrx"
       else:

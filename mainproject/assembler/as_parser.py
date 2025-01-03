@@ -2,20 +2,19 @@ from as_obj import *
 from define import *
 
 class Parser:
-  def __init__(self, filepath):
-    self._file = open(filepath, "r")
+  def __init__(self):
     self._not_support_count = 0
     self._inst_num = 0
     self._label_map = dict()
 
-  def parse(self) -> list[InstructionObj]:
-    self.parse_label()
+  def parse(self, filepath) -> list[InstructionObj]:
     inst_objs = []
-    for line in self._file.readlines():
-      obj = self.parse_line(line)
-      if obj is not None:
-        inst_objs.append(obj)
-    self._file.close()
+    with open(filepath, "r") as f:
+      self.parse_label(f)
+      for line in f.readlines():
+        obj = self.parse_line(line)
+        if obj is not None:
+          inst_objs.append(obj)
     return inst_objs
   
   def parse_line(self, line: str) -> InstructionObj:
@@ -35,7 +34,7 @@ class Parser:
     line_elem = line.split(" ")
     mnemonic = line_elem[0].casefold()
 
-    print(f"LINE: {line_elem}")
+    # print(f"LINE: {line_elem}")
 
     if mnemonic in data_opcode_map.keys():
       reg = line_elem[1].rstrip(",")
@@ -92,11 +91,11 @@ class Parser:
       return None
     return instobj
 
-  def parse_label(self):
+  def parse_label(self, file):
     label_addr = 0
-    if self._file is None:
+    if file is None:
       return
-    for line in self._file.readlines():
+    for line in file.readlines():
       ret, line = Parser.cleaner(line)
       if ret: continue
       if Parser.is_directives(line):
@@ -106,7 +105,7 @@ class Parser:
         continue
       line = Parser.remove_line_comment(line)
       self._label_map[line[:-1]] = label_addr
-    self._file.seek(0)
+    file.seek(0)
 
   @staticmethod
   def cleaner(line: str):

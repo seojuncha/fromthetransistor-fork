@@ -146,6 +146,8 @@ class Encoder:
       self.set_bit(shift_code_map[obj.addr_mod_obj.shifter], 5)
       self.set_bit(obj.addr_mod_obj.rm & 0xf, 0)
 
+  def to_little_endian(self):
+    self.encoding_bits = ((self.encoding_bits >> 24) & 0xff) | ((self.encoding_bits >> 8) & 0xff00) | ((self.encoding_bits << 8) & 0xff0000) | ((self.encoding_bits << 24) & 0xff00_0000)
 
   def set_condition_flag_bit(self, name: str):
     self.encoding_bits |= condition_code_map[name] << 28
