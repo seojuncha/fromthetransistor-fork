@@ -1,5 +1,4 @@
 module barrel_shifter (
-  input clk,
   input [31:0] shift_in,   // rm or imm8
   input [1:0] shift_type,
   input [4:0] shift_imm,   // immediate shift(5-bit shift_imm, 0~31) & 32-bit immediate(4-bit rotate_imm, 0~15)
@@ -23,7 +22,7 @@ module barrel_shifter (
   assign rotate_imm = is_imm_32 ? shift_imm[3:0] : shift_imm;
   assign imm8 = shift_in[7:0];
 
-  always @(posedge clk) begin
+  always @(*) begin
     if (is_imm_32) begin
       shifter_operand = (imm8 >> (rotate_imm * 2)) | (imm8 << (32 - (rotate_imm * 2)));
       if (rotate_imm == 0) begin

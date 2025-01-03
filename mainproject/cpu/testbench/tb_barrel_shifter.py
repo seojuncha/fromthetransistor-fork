@@ -8,8 +8,7 @@ from as_encoder import Encoder
 from define import shift_code_map
 
 import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, FallingEdge, Timer
+from cocotb.triggers import Timer
 
 # parser(assembly code) -> assembler obj -> encoder(assembler obj) -> binary encode shfiter operand (12-bit)
 p = Parser()
@@ -20,10 +19,6 @@ async def test_imm32(dut):
     "mov r0, #1",          # e3a00001
     "mov r1, #0xff",       # e3a010ff
   ]
-  
-  dut.is_imm_32.value = 1
-  dut.is_use_rs.value = 0
-  await FallingEdge(dut.clk)
 
   for code in assembly_code_snippet:
     obj = p.parse_line(code)
@@ -35,13 +30,16 @@ async def test_imm32(dut):
     rotate_imm = (e.encoding_bits >> 8) & 0xf
     imm8 = e.encoding_bits & 0xff
     
+    dut.is_imm_32.value = 1
+    dut.is_use_rs.value = 0
     dut.carry_in.value = 0
     dut.shift_in.value = imm8
     dut.shift_imm.value = rotate_imm
 
     expected = ((imm8 >> (rotate_imm * 2)) | (imm8 << (32 - (rotate_imm * 2)))) & 0xffff_ffff
 
-    await FallingEdge(dut.clk)
+    await Timer(1, units="ns")
+
     result = "OK" if dut.shifter_operand.value == expected else "FAIL"
     dut._log.info(f"[{result}] C: {dut.shift_carry_out.value}  Operand: 0x{dut.shifter_operand.value.integer:08x} Expected: [0x{expected:08x}]")
 
@@ -50,10 +48,6 @@ async def test_reg(dut):
     "mov r3, r0",          # e1a03000
     "mov r4, r1",          # e1a04001
   ]
-
-  dut.is_imm_32.value = 0
-  dut.is_use_rs.value = 0
-  await FallingEdge(dut.clk)
 
   for code in assembly_code_snippet:
     obj = p.parse_line(code)
@@ -68,6 +62,8 @@ async def test_reg(dut):
     elif rm == 1:
       rm_value = 0xffff_2222
 
+    dut.is_imm_32.value = 0
+    dut.is_use_rs.value = 0
     dut.shift_imm.value = 0
     dut.shift_type.value = 0
     dut.carry_in.value = 0
@@ -75,7 +71,8 @@ async def test_reg(dut):
 
     expected = rm_value & 0xffff_ffff
 
-    await FallingEdge(dut.clk)
+    await Timer(1, units="ns")
+
     result = "OK" if dut.shifter_operand.value == expected else "FAIL"
     dut._log.info(f"[{result}] C: {dut.shift_carry_out.value}  Operand: 0x{dut.shifter_operand.value.integer:08x} Expected: [0x{expected:08x}]")
 
@@ -88,10 +85,6 @@ async def test_shift_imm(dut):
     # "mov r7, r6, asr #3",   # e1a071c6
     "mov r8, r5, ror #4"      # e1a08265
   ]
-
-  dut.is_imm_32.value = 0
-  dut.is_use_rs.value = 0
-  await FallingEdge(dut.clk)
 
   for code in assembly_code_snippet:
     obj = p.parse_line(code)
@@ -114,6 +107,8 @@ async def test_shift_imm(dut):
       rm_value = 0x6fff_4444
 
     dut.is_imm_32.value = 0
+    dut.is_use_rs.value = 0
+    dut.is_imm_32.value = 0
     dut.carry_in.value = 0
     dut.shift_type.value = shift
     dut.shift_imm.value = shift_imm
@@ -126,8 +121,9 @@ async def test_shift_imm(dut):
     elif shift == shift_code_map["ror"]:
       expected = ((rm_value >> shift_imm) | (rm_value << (32 - shift_imm))) & 0xffff_ffff
     # TODO : ASR
+      
+    await Timer(1, units="ns")
 
-    await FallingEdge(dut.clk)
     result = "OK" if dut.shifter_operand.value == expected else "FAIL"
     dut._log.info(f"[{result}] C: {dut.shift_carry_out.value}  Operand: 0x{dut.shifter_operand.value.integer:08x} Expected: [0x{expected:08x}]")
 
@@ -136,10 +132,6 @@ async def test_shift_reg(dut):
     "mov r0, r0, lsl r1",
     "mov r1, r1, lsl r2",
   ]
-
-  dut.is_imm_32.value = 0
-  dut.is_use_rs.value = 1
-  await FallingEdge(dut.clk)
 
   for code in assembly_code_snippet:
     obj = p.parse_line(code)
@@ -168,6 +160,8 @@ async def test_shift_reg(dut):
     rs_value &= 0xff
 
     dut.is_imm_32.value = 0
+    dut.is_use_rs.value = 1
+    dut.is_imm_32.value = 0
     dut.carry_in.value = 0
     dut.shift_type.value = shift
     dut.rs.value = rs_value
@@ -185,17 +179,15 @@ async def test_shift_reg(dut):
     elif shift == shift_code_map["ror"]:
       expected = ((rm_value >> rs_value) | (rm_value << (32 - rs_value))) & 0xffff_ffff
     # TODO : ASR
+      
+    await Timer(1, units="ns")
 
-    await FallingEdge(dut.clk)
     result = "OK" if dut.shifter_operand.value == expected else "FAIL"
     dut._log.info(f"[{result}] C: {dut.shift_carry_out.value}  Operand: 0x{dut.shifter_operand.value.integer:08x} Expected: [0x{expected:08x}]")
 
 
 @cocotb.test()
 async def tb_barrel_shifter(dut):
-  c = Clock(dut.clk, 10, units="ns")
-  cocotb.start_soon(c.start())
-
   await test_imm32(dut)
   await test_reg(dut)
   await test_shift_imm(dut)
