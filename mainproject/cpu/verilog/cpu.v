@@ -53,17 +53,18 @@ module cpu (
   );
 
   barrel_shifter barrel_shifter_inst(
-    .clk(clk),
     .shift_in(shift_value),
     .shift_type(shift_type),
     .shift_imm(shift_amt),
+    .rs(),
+    .is_imm_32(),
+    .is_use_rs(),
     .cary_in(carry_in),
     .shifter_operand(alu_b),
     .shift_carry_out(shifter_carry_out)
   );
 
   alu alu_inst (
-    .clk(clk),
     .opcode(ir[24:21]),
     .operand1(alu_a),
     .operand2(alu_b),

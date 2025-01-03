@@ -1,13 +1,14 @@
 module alu (
-  input clk,
   input [3:0] opcode,
   input [31:0] operand1,
   input [31:0] operand2,
   input carry_in,
+  input enable_flag_update,  // enable CPSR flag update, s suffix
   output reg [31:0] result,
   output reg negative_flag,
   output reg zero_flag,
-  output reg carry_out_flag
+  output reg carry_out_flag,
+  output reg overflow_flag
 );
   reg [31:0] alu_out;
 
@@ -44,57 +45,74 @@ module alu (
         negative_flag = result[31];
       end
 
-      // can produce the carry flag
       OPCODE_SUB: begin
         result = operand1 - operand2;
         zero_flag = (result == 0);
       end
       OPCODE_RSB: begin
         result = operand2 - operand1;
-        zero_flag = (result == 0);
-        negative_flag = result[31];
+        if (enable_flag_update) begin
+          zero_flag = (result == 0);
+          negative_flag = result[31];
+        end
       end
       OPCODE_ADD: begin
          result = operand1 + operand2;
-         zero_flag = (result == 0);
-         negative_flag = result[31];
+         if (enable_flag_update) begin
+          zero_flag = (result == 0);
+          negative_flag = result[31];
+         end
       end
       OPCODE_ADC: begin
         result = operand1 + operand2 + carry_in;
-        zero_flag = (result == 0);
-        negative_flag = result[31];
+        if (enable_flag_update) begin
+          zero_flag = (result == 0);
+          negative_flag = result[31];
+        end
       end
       OPCODE_SBC: begin    // with carry
         result = operand1 - operand2 - !(carry_in);
-        zero_flag = (result == 0);
-        negative_flag = result[31];
+        if (enable_flag_update) begin
+          zero_flag = (result == 0);
+          negative_flag = result[31];
+        end
       end
       OPCODE_RSC: begin     // with carry
         result = operand2 - operand1 - !(carry_in);
-        zero_flag = (result == 0);
-        negative_flag = result[31];
+        if (enable_flag_update) begin
+          zero_flag = (result == 0);
+          negative_flag = result[31];
+        end
       end
 
       // update condition flags
       OPCODE_TST: begin
          alu_out = operand1 & operand2;
-         zero_flag = (alu_out == 0);
-         negative_flag = alu_out[31];
+         if (enable_flag_update) begin
+          zero_flag = (alu_out == 0);
+          negative_flag = alu_out[31];
+         end
       end
       OPCODE_TEQ: begin
          alu_out = operand1 ^ operand2;
-         zero_flag = (alu_out == 0);
-         negative_flag = alu_out[31];
+         if (enable_flag_update) begin
+          zero_flag = (alu_out == 0);
+          negative_flag = alu_out[31];
+         end
       end
       OPCODE_CMP: begin
          alu_out = operand1 - operand2;
-         zero_flag = (alu_out == 0);
-         negative_flag = alu_out[31];
+         if (enable_flag_update) begin
+          zero_flag = (alu_out == 0);
+          negative_flag = alu_out[31];
+         end
       end
       OPCODE_CMN: begin
         alu_out = operand1 + operand2;
-        zero_flag = (alu_out == 0);
-        negative_flag = alu_out[31];
+        if (enable_flag_update) begin
+          zero_flag = (alu_out == 0);
+          negative_flag = alu_out[31];
+        end
       end
     endcase
   end

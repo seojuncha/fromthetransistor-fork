@@ -1,6 +1,5 @@
 import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, FallingEdge, Timer
+from cocotb.triggers import Timer
 
 @cocotb.test()
 async def tb_alu(dut):
