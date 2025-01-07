@@ -2,9 +2,21 @@ module cpu (
   input clk,
   input n_reset
 );
-  localparam IDLE = 2'b00, FETCH = 2'b01, DECODE = 2'b10, EXECUTE = 2'b11;
-  reg [1:0] state;
-  reg [1:0] next_state;
+  localparam IDLE = 3'b000, 
+             FETCH = 3'b001, 
+             DECODE = 3'b010, 
+             EXECUTE = 3'b011,
+             WRITE_BACK = 3'b100,
+             DONE = 3'b101;
+
+  localparam DATA_PROCESSING_REG = 3'b000,
+             DATA_PROCESSING_IMM = 3'b001,
+             LOAD_STORE_IMM = 3'b010,
+             LOAD_STORE_REG = 3'b011,
+             BRANCH = 3'b101;
+
+  reg [2:0] state;
+  reg [2:0] next_state;
 
   // registers
   reg [31:0] register [0:12];
@@ -13,36 +25,64 @@ module cpu (
   reg [31:0] pc;  // R15
 
   // interal registers to communicate with ALU
-  reg [31:0] alu_a;   // operand 1
-  reg [31:0] alu_b;   // operand 2(shifter operand)
+  reg execute_enable;
+  reg [31:0] alu_a;    // operand 1
+  reg [31:0] alu_b;    // operand 2(shifter operand)
   reg [31:0] alu_out;  // result
-  reg carry_in;
 
   // barrel shifter
   reg [31:0] shift_value;
   reg [4:0] shift_amt;
-  reg [1:0] shift_type;
-  reg shifter_carry_out;
+  // reg [1:0] shift_type;
+  // reg shifter_carry_out;
 
   // b[31]: Negative, b[30]: Zero, b[29]: Carry, b[28]: oVerflow
   // Other bits always SBZ
   reg [31:0] cpsr;
+  wire neg_flag;
+  wire zero_flag;
+  wire carry_flag;
+  wire overflow_flag;
 
   // instruction register
   reg [31:0] ir;
 
-  // interfaces
+  // decoder interface
+  reg decode_enable;
+  reg [3:0] dec_opcode,
+  reg [3:0] dec_rd,
+  reg [3:0] dec_rn,
+  reg [3:0] dec_rm,
+  reg [1:0] dec_shift,
+  reg [4:0] dec_shift_amount,
+  reg dec_use_rs,
+  reg dec_use_imm32,
+  reg [3:0] dec_rs,
+  reg [3:0] dec_rotate_imm,
+  reg [7:0] dec_imm8,  
+  reg dec_mem_read,
+  reg dec_mem_write,
+
+  // memory interfaces
   wire [31:0] address;
   wire [31:0] data_in;
   wire [31:0] data_out;
+  wire mem_read;
+  wire mem_ready;
 
   // internal wires
   reg bram_enable;
   wire [17:0] bram_addr;
+  wire [17:0] sram_addr;
 
   reg little_endian;
 
   assign bram_addr = pc >> 2;
+
+  assign neg_flag = cpsr[31];
+  assign zero_flag = cpsr[30];
+  assign carry_flag = cpsr[29];
+  assign overflow_flag = cpsr[28];
 
   // modules
   bram bram_inst (
@@ -52,27 +92,56 @@ module cpu (
     .data_out(data_in)
   );
 
+  sram sram_inst(
+    .clk(clk),
+    .wr(~memory_read),
+    .address(sram_addr),
+    .data_in(data_out),
+    .data_out(data_in),
+    .ready(mem_ready)
+  );
+
+  decoder decoder_inst(
+    .clk(clk),
+    .enable(decode_enable),
+    .instruction(ir),
+    .opcode(dec_opcode),
+    .rd(dec_rd),
+    .rn(dec_rn),
+    .rm(dec_rm),
+    .shift(dec_shift),
+    .shift_amount(dec_shift_amount),
+    .use_rs(dec_use_rs),
+    .use_imm32(dec_use_imm32),
+    .rs(dec_rs),
+    .rotate_imm(dec_rotate_imm),
+    .imm8(dec_imm8),
+    .mem_read(dec_mem_read),
+    .mem_write(dec_mem_write)
+  );
+
   barrel_shifter barrel_shifter_inst(
     .shift_in(shift_value),
-    .shift_type(shift_type),
+    .shift_type(dec_shift),
     .shift_imm(shift_amt),
-    .rs(),
-    .is_imm_32(),
-    .is_use_rs(),
-    .cary_in(carry_in),
+    .rs(dec_rs),
+    .is_imm_32(dec_use_imm32),
+    .is_use_rs(dec_use_rs),
+    .cary_in(carry_flag),
     .shifter_operand(alu_b),
-    .shift_carry_out(shifter_carry_out)
+    .shift_carry_out(carry_flag)
   );
 
   alu alu_inst (
-    .opcode(ir[24:21]),
+    .enable(execute_enable),
+    .opcode(dec_opcode),
     .operand1(alu_a),
     .operand2(alu_b),
-    .carry_in(carry_in),
+    .carry_in(carry_flag),
     .result(alu_out),
-    .negative_flag(cpsr[31]),
-    .zero_flag(cpsr[30]),
-    .carry_out_flag(cpsr[29])
+    .negative_flag(neg_flag),
+    .zero_flag(zero_flag),
+    .carry_out_flag(carry_flag)
   );
 
   // only for debug
@@ -82,19 +151,41 @@ module cpu (
 
   always @(posedge clk) begin
     case (state)
-      // skip condition flag
-      DECODE: begin
-        // data processing
-        if (ir[27:26] == 2'b00) begin
-          alu_a <= register[ir[19:16]];
-          // immediate, rotate_imm with imm_8
-          if (ir[25] == 1'b1) begin
-            
-          end
-        end
+      IDLE: begin
       end
+
+      FETCH: begin
+        if (little_endian)  // for convinent, little->big
+          ir <= (data_in[7:0] << 24) | (data_in[15:8] << 16) | (data_in[23:16] << 8) | (data_in[31:24]);
+        else
+          ir <= data_in;
+        pc <= pc + 4;
+      end
+
+      DECODE: begin
+
+      end
+
       EXECUTE: begin
-        register[ir[15:12]] <= alu_out;
+        case (dec_opcode)
+          DATA_PROCESSING_REG: begin
+            shift_value <= register[rm];
+            shift_amt <= dec_shift_amount;
+          end
+
+          DATA_PROCESSING_IMM: begin
+            shift_value <= dec_imm8;
+            shift_amt <= dec_rotate_imm;
+          end
+        endcase
+        alu_a <= register[rn];
+      end
+
+      WRITE_BACK: begin
+        register[rd] <= alu_out;
+      end
+
+      DONE: begin
       end
     endcase
     
@@ -112,31 +203,36 @@ module cpu (
     next_state = state;
     case (state)
       IDLE: begin
-        sp = 32'd0;
-        lr = 32'd0;
-        pc = 32'd0;
         next_state = IDLE;
         if (bram_enable)
           next_state = FETCH;
         $display("IDLE");
       end
       FETCH: begin
-        if (little_endian)  // for convinent, little->big
-          ir = (data_in[7:0] << 24) | (data_in[15:8] << 16) | (data_in[23:16] << 8) | (data_in[31:24]);
-        else
-          ir = data_in;
-        pc = pc + 4;
         next_state = DECODE;
         $display("FETCH");
       end
       DECODE: begin
+        decode_enable = 1;
         next_state = EXECUTE;
         $display("DECODE");
       end
       EXECUTE: begin
-        next_state = FETCH;
+        execute_enable = 1;
+        next_state = WRITE_BACK
+        // next_state = EXECUTE;
         $display("EXECUTE");
       end
+      WRITE_BACK: begin
+        next_state = DONE;
+        $display("WRITE_BACK");
+      end
+      DONE: begin
+        next_state = FETCH;
+        $display("DONE");
+      end
+      default:
+        next_state = IDLE;
     endcase
   end
 

@@ -1,6 +1,7 @@
 module alu #(
   parameter DATA_WIDTH=4
 )(
+  input enable,
   input [3:0] opcode,
   input [DATA_WIDTH-1:0] operand1,
   input [DATA_WIDTH-1:0] operand2,
@@ -48,41 +49,42 @@ module alu #(
              OPCODE_MVN = 4'b1111;
 
   always @(*) begin
-    alu_out = 0;
+    if (enable) begin
+      alu_out = 0;
+      case (opcode)
+        OPCODE_AND: alu_out = alu_a & alu_b;
+        OPCODE_EOR: alu_out = alu_a ^ alu_b;
+        OPCODE_ORR: alu_out = alu_a | alu_b;
+        OPCODE_MOV: alu_out = alu_b;
+        OPCODE_MVN: alu_out = {1'b0, ~operand2};
+        OPCODE_BIC: alu_out = alu_a & {1'b0, ~operand2};
 
-    case (opcode)
-      OPCODE_AND: alu_out = alu_a & alu_b;
-      OPCODE_EOR: alu_out = alu_a ^ alu_b;
-      OPCODE_ORR: alu_out = alu_a | alu_b;
-      OPCODE_MOV: alu_out = alu_b;
-      OPCODE_MVN: alu_out = {1'b0, ~operand2};
-      OPCODE_BIC: alu_out = alu_a & {1'b0, ~operand2};
+        OPCODE_SUB: alu_out = alu_a + alu_two_comple_b;
+        OPCODE_RSB: alu_out = alu_b + alu_two_comple_a;
+        OPCODE_ADD: alu_out = alu_a + alu_b;
+        OPCODE_ADC: alu_out = alu_a + alu_b + carry_in;
+        OPCODE_SBC: alu_out = alu_a + alu_two_comple_b - ~carry_in;
+        OPCODE_RSC: alu_out = alu_b + alu_two_comple_a - ~carry_in;
 
-      OPCODE_SUB: alu_out = alu_a + alu_two_comple_b;
-      OPCODE_RSB: alu_out = alu_b + alu_two_comple_a;
-      OPCODE_ADD: alu_out = alu_a + alu_b;
-      OPCODE_ADC: alu_out = alu_a + alu_b + carry_in;
-      OPCODE_SBC: alu_out = alu_a + alu_two_comple_b - ~carry_in;
-      OPCODE_RSC: alu_out = alu_b + alu_two_comple_a - ~carry_in;
+        OPCODE_TST: alu_out = alu_a & alu_b;
+        OPCODE_TEQ: alu_out = alu_a ^ alu_b;
+        OPCODE_CMP: alu_out = alu_a + alu_two_comple_b;
+        OPCODE_CMN: alu_out = alu_a + alu_b;
+        
+        default: result = 0;
+      endcase
 
-      OPCODE_TST: alu_out = alu_a & alu_b;
-      OPCODE_TEQ: alu_out = alu_a ^ alu_b;
-      OPCODE_CMP: alu_out = alu_a + alu_two_comple_b;
-      OPCODE_CMN: alu_out = alu_a + alu_b;
-      
-      default: result = 0;
-    endcase
-
-    result = alu_out[DATA_WIDTH-1:0];
-    if (enable_flag_update) begin
-      zero_flag = (result == 0);
-      negative_flag = result[DATA_WIDTH-1];
-      if (!not_affect_overflow) begin
-        overflow_flag = (operand1[DATA_WIDTH-1] & operand2[DATA_WIDTH-1] & ~result[DATA_WIDTH-1]) 
-                        | (~operand1[DATA_WIDTH-1] & ~operand2[DATA_WIDTH-1] & result[DATA_WIDTH-1]);
-        carry_out_flag = alu_out[DATA_WIDTH];
-      end else begin
-        carry_out_flag = carry_in;
+      result = alu_out[DATA_WIDTH-1:0];
+      if (enable_flag_update) begin
+        zero_flag = (result == 0);
+        negative_flag = result[DATA_WIDTH-1];
+        if (!not_affect_overflow) begin
+          overflow_flag = (operand1[DATA_WIDTH-1] & operand2[DATA_WIDTH-1] & ~result[DATA_WIDTH-1]) 
+                          | (~operand1[DATA_WIDTH-1] & ~operand2[DATA_WIDTH-1] & result[DATA_WIDTH-1]);
+          carry_out_flag = alu_out[DATA_WIDTH];
+        end else begin
+          carry_out_flag = carry_in;
+        end
       end
     end
   end
