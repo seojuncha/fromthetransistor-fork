@@ -3,11 +3,11 @@ module decoder (
   input enable,
   // common
   input [31:0] instruction,
-  output reg [3:0] opcode,
   output reg [3:0] rd,
   output reg [3:0] rn,
   output reg [3:0] rm,
   // data processing
+  output reg [3:0] opcode,
   output reg [1:0] shift, // also from load and store
   output reg [4:0] shift_amount,  // also from load and store
   output reg use_rs,
