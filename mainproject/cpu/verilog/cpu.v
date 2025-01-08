@@ -49,6 +49,7 @@ module cpu (
 
   // decoder interface
   reg decode_enable;
+  reg decode_valid;
   reg [3:0] dec_opcode,
   reg [3:0] dec_rd,
   reg [3:0] dec_rn,
@@ -60,6 +61,14 @@ module cpu (
   reg [3:0] dec_rs,
   reg [3:0] dec_rotate_imm,
   reg [7:0] dec_imm8,  
+  reg dec_is_load,
+  reg dec_is_unsigned_byte,
+  reg dec_is_not_postindex,
+  reg dec_is_added_offset,
+  reg dec_is_write_back,
+  reg [11:0] dec_offset_12,
+  reg dec_branch_with_link,
+  reg [23:0] dec_signed_immmed_24,
   reg dec_mem_read,
   reg dec_mem_write,
 
@@ -67,7 +76,7 @@ module cpu (
   wire [31:0] address;
   wire [31:0] data_in;
   wire [31:0] data_out;
-  wire mem_read;
+  wire mem_write;
   wire mem_ready;
 
   // internal wires
@@ -94,7 +103,7 @@ module cpu (
 
   sram sram_inst(
     .clk(clk),
-    .wr(~memory_read),
+    .wr(mem_write),
     .address(sram_addr),
     .data_in(data_out),
     .data_out(data_in),
@@ -116,8 +125,17 @@ module cpu (
     .rs(dec_rs),
     .rotate_imm(dec_rotate_imm),
     .imm8(dec_imm8),
+    .is_load(dec_is_load),
+    .is_unsigned_byte(dec_is_unsigned_byte),
+    .is_not_postindex(dec_is_not_postindex),
+    .is_added_offset(dec_is_added_offset),
+    .is_write_back(dec_is_write_back),
+    .offset_12(dec_offset_12),
+    .branch_with_link(dec_branch_with_link),
+    .signed_immmed_24(dec_signed_immmed_24),
     .mem_read(dec_mem_read),
-    .mem_write(dec_mem_write)
+    .mem_write(dec_mem_write),
+    .valid(decode_valid)
   );
 
   barrel_shifter barrel_shifter_inst(
@@ -163,7 +181,7 @@ module cpu (
       end
 
       DECODE: begin
-
+        // TODO: error check
       end
 
       EXECUTE: begin
@@ -176,6 +194,15 @@ module cpu (
           DATA_PROCESSING_IMM: begin
             shift_value <= dec_imm8;
             shift_amt <= dec_rotate_imm;
+          end
+
+          LOAD_STORE_IMM: begin
+          end
+
+          LOAD_STORE_REG: begin
+          end
+
+          BRANCH: begin
           end
         endcase
         alu_a <= register[rn];
@@ -214,7 +241,8 @@ module cpu (
       end
       DECODE: begin
         decode_enable = 1;
-        next_state = EXECUTE;
+        if (decode_valid)
+          next_state = EXECUTE;
         $display("DECODE");
       end
       EXECUTE: begin
