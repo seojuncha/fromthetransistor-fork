@@ -1,6 +1,9 @@
 module cpu (
   input clk,
   input n_reset
+  wire [31:0] address;
+  wire [31:0] data_in;
+  wire [31:0] data_out;
 );
   localparam IDLE = 3'b000, 
              FETCH = 3'b001, 
@@ -73,9 +76,6 @@ module cpu (
   reg dec_mem_write,
 
   // memory interfaces
-  wire [31:0] address;
-  wire [31:0] data_in;
-  wire [31:0] data_out;
   wire mem_write;
   wire mem_ready;
 

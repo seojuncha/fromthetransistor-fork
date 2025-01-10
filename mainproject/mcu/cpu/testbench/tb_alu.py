@@ -1,6 +1,5 @@
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.handle import Release
 
 import os
 import sys
