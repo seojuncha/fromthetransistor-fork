@@ -54,65 +54,7 @@ BRAM
 
 
 
-32-bit address: 2^32 = 4,294,967,296 (4GB)<br>
-Available address space : 4GB
 
-```
-+-------------+ 0xff... (MSB)
-| 32-bit word |
-+-------------+
-| 32-bit word |
-+-------------+
-|    ....     |
-+-------------+
-| 32-bit word |
-+-------------+
-| 32-bit word |
-+-------------+ 0x00... (LSB)
-```
-So what is the number of word when I define a mmemory size.
-
-total memory size = word * #word so,<br>
-#word = total memory size / word
-
-For example,
-```
-1) memory size = 32KB
-#word = 32KB(bytes) / 4B(ytes)
-      = 8K = 8*1024
-      = 8,192
-
-2) memory size = 64KB
-#word = 64K / 4
-      = 16K = 16*1024
-      = 16,384
-
-3) memory size = 1MB
-#word = 1M / 4
-      = 1024K / 4
-      = 256K = 256*1024
-      = 262,144
-```
-
-Memory Map
-```
-BRAM
-size: 32K
-start: 0x0000_0000
-end:   0x0000_1FFF
-```
-```
-SRAM
-size: 32K
-start: 0x0000_2000
-end:   0x0000_3FFF
-```
-```
-MMIO
-size: 4K
-start: 0x0000_4000
-end: : 0x0000_4FFF
-```
 ### Usage of $readmemb
 ```shell
 # convert raw binary data to text-based binary representation.

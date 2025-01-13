@@ -1,9 +1,11 @@
 module cpu (
   input clk,
-  input n_reset
-  wire [31:0] address;
-  wire [31:0] data_in;
-  wire [31:0] data_out;
+  input n_reset,
+  output reg [31:0] address,   // memory address
+  input [31:0] data_in,        // from memory
+  output reg[31:0] data_out,   // to memory
+  output reg memory_read,
+  output reg memory_write
 );
   localparam IDLE = 3'b000, 
              FETCH = 3'b001, 
@@ -75,40 +77,16 @@ module cpu (
   reg dec_mem_read,
   reg dec_mem_write,
 
-  // memory interfaces
+  // memory control
   wire mem_write;
   wire mem_ready;
 
-  // internal wires
-  reg bram_enable;
-  wire [17:0] bram_addr;
-  wire [17:0] sram_addr;
-
   reg little_endian;
-
-  assign bram_addr = pc >> 2;
 
   assign neg_flag = cpsr[31];
   assign zero_flag = cpsr[30];
   assign carry_flag = cpsr[29];
   assign overflow_flag = cpsr[28];
-
-  // modules
-  bram bram_inst (
-    .clk(clk),
-    .enable(bram_enable),
-    .address(bram_addr),
-    .data_out(data_in)
-  );
-
-  sram sram_inst(
-    .clk(clk),
-    .wr(mem_write),
-    .address(sram_addr),
-    .data_in(data_out),
-    .data_out(data_in),
-    .ready(mem_ready)
-  );
 
   decoder decoder_inst(
     .clk(clk),
