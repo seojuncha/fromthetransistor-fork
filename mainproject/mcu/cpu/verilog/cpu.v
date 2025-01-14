@@ -1,6 +1,7 @@
 module cpu (
   input clk,
   input n_reset,
+  input little_endian_en,
   output reg [31:0] address,   // memory address
   input [31:0] data_in,        // from memory
   output reg[31:0] data_out,   // to memory
@@ -29,17 +30,7 @@ module cpu (
   reg [31:0] lr;  // R14
   reg [31:0] pc;  // R15
 
-  // interal registers to communicate with ALU
-  reg execute_enable;
-  reg [31:0] alu_a;    // operand 1
-  reg [31:0] alu_b;    // operand 2(shifter operand)
-  reg [31:0] alu_out;  // result
-
-  // barrel shifter
-  reg [31:0] shift_value;
-  reg [4:0] shift_amt;
-  // reg [1:0] shift_type;
-  // reg shifter_carry_out;
+  
 
   // b[31]: Negative, b[30]: Zero, b[29]: Carry, b[28]: oVerflow
   // Other bits always SBZ
@@ -54,34 +45,32 @@ module cpu (
 
   // decoder interface
   reg decode_enable;
-  reg decode_valid;
-  reg [3:0] dec_opcode,
-  reg [3:0] dec_rd,
-  reg [3:0] dec_rn,
-  reg [3:0] dec_rm,
-  reg [1:0] dec_shift,
-  reg [4:0] dec_shift_amount,
-  reg dec_use_rs,
-  reg dec_use_imm32,
-  reg [3:0] dec_rs,
-  reg [3:0] dec_rotate_imm,
-  reg [7:0] dec_imm8,  
-  reg dec_is_load,
-  reg dec_is_unsigned_byte,
-  reg dec_is_not_postindex,
-  reg dec_is_added_offset,
-  reg dec_is_write_back,
-  reg [11:0] dec_offset_12,
-  reg dec_branch_with_link,
-  reg [23:0] dec_signed_immmed_24,
-  reg dec_mem_read,
-  reg dec_mem_write,
+  wire decode_valid;
+  wire [3:0] dec_opcode;
+  wire [3:0] dec_rd;
+  wire [3:0] dec_rn;
+  wire [3:0] dec_rm;
+  wire [1:0] dec_shift;
+  wire [4:0] dec_shift_amount;
+  wire dec_use_rs;
+  wire dec_use_imm32;
+  wire [3:0] dec_rs;
+  wire [3:0] dec_rotate_imm;
+  wire [7:0] dec_imm8;
+  wire dec_is_load;
+  wire dec_is_unsigned_byte;
+  wire dec_is_not_postindex;
+  wire dec_is_added_offset;
+  wire dec_is_write_back;
+  wire [11:0] dec_offset_12;
+  wire dec_branch_with_link;
+  wire [23:0] dec_signed_immmed_24;
+  wire dec_mem_read;
+  wire dec_mem_write;
 
   // memory control
   wire mem_write;
   wire mem_ready;
-
-  reg little_endian;
 
   assign neg_flag = cpsr[31];
   assign zero_flag = cpsr[30];
@@ -116,21 +105,37 @@ module cpu (
     .valid(decode_valid)
   );
 
+
+  // barrel shifter
+  reg [31:0] shift_value;
+  reg [4:0] shift_amt;
+  wire [31:0] shifter_operand;
+  reg shfiter_use_imm32;
+  // reg [1:0] shift_type;
+  // reg shifter_carry_out;
+
   barrel_shifter barrel_shifter_inst(
     .shift_in(shift_value),
     .shift_type(dec_shift),
     .shift_imm(shift_amt),
-    .rs(dec_rs),
-    .is_imm_32(dec_use_imm32),
+    .rs(dec_rs[7:0]),
+    .is_imm_32(shfiter_use_imm32),
     .is_use_rs(dec_use_rs),
-    .cary_in(carry_flag),
-    .shifter_operand(alu_b),
+    .carry_in(carry_flag),
+    .shifter_operand(shifter_operand),
     .shift_carry_out(carry_flag)
   );
 
+  // interal registers to communicate with ALU
+  reg execute_enable;
+  reg [31:0] alu_a;    // operand 1
+  reg [31:0] alu_b;    // operand 2(shifter operand)
+  wire [31:0] alu_out;  // result
+  reg [3:0] alu_opcode;
+
   alu alu_inst (
     .enable(execute_enable),
-    .opcode(dec_opcode),
+    .opcode(alu_opcode),
     .operand1(alu_a),
     .operand2(alu_b),
     .carry_in(carry_flag),
@@ -145,55 +150,79 @@ module cpu (
     $monitor("[%0t] PC [%x] INST [0x%8x]",$time, pc, ir);
   end
 
-  always @(posedge clk) begin
-    case (state)
-      IDLE: begin
+  always @(posedge clk or negedge n_reset) begin
+    if (!n_reset) begin
+      for (int i = 0; i < 13; i = i + 1) begin
+        register[i] <= 32'd0;
       end
+      sp <= 32'd0;
+      lr <= 32'd0;
+      pc <= 32'd0;
+    end else begin
+      case (state)
+        IDLE: begin
+          $display("IDLE");
+        end
 
-      FETCH: begin
-        if (little_endian)  // for convinent, little->big
-          ir <= (data_in[7:0] << 24) | (data_in[15:8] << 16) | (data_in[23:16] << 8) | (data_in[31:24]);
-        else
-          ir <= data_in;
-        pc <= pc + 4;
-      end
+        FETCH: begin
+          $display("[CPU] FETCH");
+          if (little_endian_en)  // for convinient, little->big
+            ir <= (data_in[7:0] << 24) | (data_in[15:8] << 16) | (data_in[23:16] << 8) | (data_in[31:24]);
+          else
+            ir <= data_in;
+          pc <= pc + 4;
+        end
 
-      DECODE: begin
-        // TODO: error check
-      end
+        DECODE: begin
+          $display("[CPU] DECODE");
+          // TODO: error check
+          
+        end
 
-      EXECUTE: begin
-        case (dec_opcode)
-          DATA_PROCESSING_REG: begin
-            shift_value <= register[rm];
-            shift_amt <= dec_shift_amount;
-          end
+        EXECUTE: begin
+          $display("[CPU] EXECUTE");
+          case (ir[27:25])
+            DATA_PROCESSING_REG: begin
+              $display("[CPU] DATA_PROCESSING_REG");
+              shift_value <= register[dec_rm];
+              shift_amt <= dec_shift_amount;
+              alu_b <= shifter_operand;
+              alu_opcode <= dec_opcode;
+            end
 
-          DATA_PROCESSING_IMM: begin
-            shift_value <= dec_imm8;
-            shift_amt <= dec_rotate_imm;
-          end
+            DATA_PROCESSING_IMM: begin
+              $display("[CPU] DATA_PROCESSING_IMM");
+              shift_value <= dec_imm8;
+              shift_amt <= dec_rotate_imm;
+              shfiter_use_imm32 <= dec_use_imm32;
+              alu_b <= shifter_operand;
+              alu_opcode <= dec_opcode;
+            end
 
-          LOAD_STORE_IMM: begin
-          end
+            LOAD_STORE_IMM: begin
+            end
 
-          LOAD_STORE_REG: begin
-          end
+            LOAD_STORE_REG: begin
+            end
 
-          BRANCH: begin
-          end
-        endcase
-        alu_a <= register[rn];
-      end
+            BRANCH: begin
+            end
+            default:  $display("[CPU] UNKNOWN TYPE: %x", ir[27:25]);
+          endcase
 
-      WRITE_BACK: begin
-        register[rd] <= alu_out;
-      end
+          alu_a <= register[dec_rn];
+        end
 
-      DONE: begin
-      end
-    endcase
-    
+        WRITE_BACK: begin
+          $display("[CPU] WRITE_BACK");
+          register[dec_rd] <= alu_out;
+        end
+
+        DONE: begin
+          $display("[CPU] DONE");
+        end
+      endcase
+    end
   end
 
   always @(posedge clk or negedge n_reset) begin
@@ -208,34 +237,27 @@ module cpu (
     next_state = state;
     case (state)
       IDLE: begin
-        next_state = IDLE;
-        if (bram_enable)
-          next_state = FETCH;
-        $display("IDLE");
+        next_state = FETCH;
       end
       FETCH: begin
         next_state = DECODE;
-        $display("FETCH");
+        decode_enable = 1;
       end
       DECODE: begin
-        decode_enable = 1;
-        if (decode_valid)
+        if (decode_valid) begin
           next_state = EXECUTE;
-        $display("DECODE");
+          execute_enable = 1;
+        end
       end
       EXECUTE: begin
-        execute_enable = 1;
-        next_state = WRITE_BACK
+        next_state = WRITE_BACK;
         // next_state = EXECUTE;
-        $display("EXECUTE");
       end
       WRITE_BACK: begin
         next_state = DONE;
-        $display("WRITE_BACK");
       end
       DONE: begin
         next_state = FETCH;
-        $display("DONE");
       end
       default:
         next_state = IDLE;

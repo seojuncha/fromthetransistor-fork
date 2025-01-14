@@ -4,7 +4,7 @@ from cocotb.triggers import Timer
 import os
 import sys
 
-as_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assembler"))
+as_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "assembler"))
 sys.path.append(as_path)
 from define import data_opcode_map
 
@@ -80,11 +80,12 @@ async def tb_alu(dut):
   dut.negative_flag.value = 0
   dut.carry_out_flag.value = 0
   dut.overflow_flag.value = 0
+  dut.enable.value = 1
 
   for c in [0, 1]:
     carry_in = c & 0x1
     for k, v in data_opcode_map.items():
-      if k != "sbc": continue
+      if k != "mov": continue
       dut.opcode.value = v
       dut.carry_in.value = carry_in
       dut.enable_flag_update.value = 1   # forcibely now
@@ -118,5 +119,5 @@ async def tb_alu(dut):
 
           if out_fail or z_fail or n_fail or c_fail or v_fail:
             dut._log.info(f"\nOPCODE: {k} OPRD1: 0x{i:X} OPRD2: 0x{j:X} CARRY: {carry_in:b}")
-            dut._log.info(f"[Z:{z_out}] [N:{n_out}] [C:{c_out}] [V:{v_out}] Act = 0x{alu_out.integer:X}")
-            dut._log.info(f"[Z:{z_exp}] [N:{n_exp}] [C:{c_exp}] [V:{v_exp}] Exp = 0x{alu_exp:X}")
+            dut._log.info(f"Actual [Z:{z_out}] [N:{n_out}] [C:{c_out}] [V:{v_out}] 0x{alu_out.integer:X}")
+            dut._log.info(f"Expect [Z:{z_exp}] [N:{n_exp}] [C:{c_exp}] [V:{v_exp}] 0x{alu_exp:X}")

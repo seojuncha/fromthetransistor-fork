@@ -1,5 +1,5 @@
 module alu #(
-  parameter DATA_WIDTH=4
+  parameter DATA_WIDTH=32
 )(
   input enable,
   input [3:0] opcode,
@@ -51,6 +51,8 @@ module alu #(
   always @(*) begin
     if (enable) begin
       alu_out = 0;
+      $display("[ALU] operand1: %b, operand2: %b", operand1, operand2);
+      $display("[ALU] a: %b, b: %b", alu_a, alu_b);
       case (opcode)
         OPCODE_AND: alu_out = alu_a & alu_b;
         OPCODE_EOR: alu_out = alu_a ^ alu_b;

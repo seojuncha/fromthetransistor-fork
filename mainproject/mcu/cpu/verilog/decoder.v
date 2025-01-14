@@ -29,7 +29,7 @@ module decoder (
   output reg mem_read,
   output reg mem_write,
   // success or not
-  output reg valid,
+  output reg valid
 );
   localparam DATA_PROCESSING_REG = 3'b000,
              DATA_PROCESSING_IMM = 3'b001,
@@ -42,6 +42,7 @@ module decoder (
       valid <= 1; // Focibly 1 now.
       case (instruction[27:25])
         DATA_PROCESSING_REG: begin
+          $display("[DECODER] DATA_PROCESSING_REG");
           shift <= instruction[6:5];
           if (instruction[20]) begin
             use_rs <= instruction[20];
@@ -52,15 +53,19 @@ module decoder (
         end
 
         DATA_PROCESSING_IMM: begin
+          $display("[DECODER] DATA_PROCESSING_IMM");
           rotate_imm <= instruction[11:8];
           imm8 <= instruction[7:0];
+          use_imm32 <= 1;
         end
 
         LOAD_STORE_IMM: begin
+          $display("[DECODER] LOAD_STORE_IMM");
           offset_12 <= instruction[11:0];
         end
 
         LOAD_STORE_REG: begin
+          $display("[DECODER] LOAD_STORE_REG");
           if (instruction[11:4] != 8'd0) begin
             shift_amount <= instruction[11:7];
             shift <= instruction[6:5];
@@ -68,6 +73,7 @@ module decoder (
         end
 
         BRANCH: begin
+          $display("[DECODER] BRANCH");
           branch_with_link <= instruction[24];
           signed_immmed_24 <= instruction[23:0];
           mem_read <= 1'b0;
@@ -76,17 +82,20 @@ module decoder (
       endcase
 
       if (instruction[27:25] == DATA_PROCESSING_REG || instruction[27:25] == DATA_PROCESSING_IMM) begin
+        $display("[DECODER] is data processing: %b", instruction[24:21]);
         opcode <= instruction[24:21];
         mem_read <= 1'b0;
         mem_write <= 1'b0;
       end
 
       if (instruction[27:25] != BRANCH) begin
+        $display("[DECODER] not branch");
         rn <= instruction[19:16];
         rd <= instruction[15:12];
       end
 
       if (instruction[27:25] == DATA_PROCESSING_REG || instruction[27:25] == LOAD_STORE_REG) begin
+        $display("[DECODER] use register");
         rm <= instruction[3:0];
       end
 
@@ -96,6 +105,13 @@ module decoder (
         is_unsigned_byte <= instruction[22];  // B bit
         is_write_back <= instruction[21];     // W bit
         is_load <= instruction[20];           // L bit
+        if (instruction[20]) begin
+          mem_read <= 1;
+          mem_write <= 0;
+        end else begin
+          mem_read <= 0;
+          mem_write <= 1;
+        end
       end
     end else begin
       valid <= 0;
