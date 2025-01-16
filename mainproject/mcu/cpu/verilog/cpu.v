@@ -30,8 +30,6 @@ module cpu (
   reg [31:0] lr;  // R14
   reg [31:0] pc;  // R15
 
-  
-
   // b[31]: Negative, b[30]: Zero, b[29]: Carry, b[28]: oVerflow
   // Other bits always SBZ
   reg [31:0] cpsr;
@@ -39,6 +37,15 @@ module cpu (
   wire zero_flag;
   wire carry_flag;
   wire overflow_flag;
+
+  // memory control
+  wire mem_write;
+  wire mem_ready;
+
+  assign neg_flag = cpsr[31];
+  assign zero_flag = cpsr[30];
+  assign carry_flag = cpsr[29];
+  assign overflow_flag = cpsr[28];
 
   // instruction register
   reg [31:0] ir;
@@ -67,15 +74,6 @@ module cpu (
   wire [23:0] dec_signed_immmed_24;
   wire dec_mem_read;
   wire dec_mem_write;
-
-  // memory control
-  wire mem_write;
-  wire mem_ready;
-
-  assign neg_flag = cpsr[31];
-  assign zero_flag = cpsr[30];
-  assign carry_flag = cpsr[29];
-  assign overflow_flag = cpsr[28];
 
   decoder decoder_inst(
     .clk(clk),
@@ -110,16 +108,13 @@ module cpu (
   reg [31:0] shift_value;
   reg [4:0] shift_amt;
   wire [31:0] shifter_operand;
-  reg shfiter_use_imm32;
-  // reg [1:0] shift_type;
-  // reg shifter_carry_out;
 
   barrel_shifter barrel_shifter_inst(
     .shift_in(shift_value),
     .shift_type(dec_shift),
     .shift_imm(shift_amt),
     .rs(dec_rs[7:0]),
-    .is_imm_32(shfiter_use_imm32),
+    .is_imm_32(dec_use_imm32),
     .is_use_rs(dec_use_rs),
     .carry_in(carry_flag),
     .shifter_operand(shifter_operand),
@@ -128,16 +123,14 @@ module cpu (
 
   // interal registers to communicate with ALU
   reg execute_enable;
-  reg [31:0] alu_a;    // operand 1
-  reg [31:0] alu_b;    // operand 2(shifter operand)
+  reg [31:0] alu_a;     // operand 1. operand 2 from shifter
   wire [31:0] alu_out;  // result
-  reg [3:0] alu_opcode;
 
   alu alu_inst (
     .enable(execute_enable),
-    .opcode(alu_opcode),
+    .opcode(dec_opcode),
     .operand1(alu_a),
-    .operand2(alu_b),
+    .operand2(shifter_operand),
     .carry_in(carry_flag),
     .result(alu_out),
     .negative_flag(neg_flag),
@@ -147,7 +140,7 @@ module cpu (
 
   // only for debug
   initial begin
-    $monitor("[%0t] PC [%x] INST [0x%8x]",$time, pc, ir);
+    $monitor("[%0t] PC [%x] IR [0x%8x]",$time, pc, ir);
   end
 
   always @(posedge clk or negedge n_reset) begin
@@ -161,11 +154,11 @@ module cpu (
     end else begin
       case (state)
         IDLE: begin
-          $display("IDLE");
+          $display("[CPU] ===== IDLE");
         end
 
         FETCH: begin
-          $display("[CPU] FETCH");
+          $display("[CPU] ===== FETCH");
           if (little_endian_en)  // for convinient, little->big
             ir <= (data_in[7:0] << 24) | (data_in[15:8] << 16) | (data_in[23:16] << 8) | (data_in[31:24]);
           else
@@ -174,29 +167,26 @@ module cpu (
         end
 
         DECODE: begin
-          $display("[CPU] DECODE");
+          $display("[CPU] ===== DECODE");
           // TODO: error check
           
         end
 
         EXECUTE: begin
-          $display("[CPU] EXECUTE");
+          $display("[CPU] ===== EXECUTE");
           case (ir[27:25])
             DATA_PROCESSING_REG: begin
               $display("[CPU] DATA_PROCESSING_REG");
               shift_value <= register[dec_rm];
               shift_amt <= dec_shift_amount;
-              alu_b <= shifter_operand;
-              alu_opcode <= dec_opcode;
+              $display("[CPU] -------------------------------");
             end
 
             DATA_PROCESSING_IMM: begin
               $display("[CPU] DATA_PROCESSING_IMM");
               shift_value <= dec_imm8;
               shift_amt <= dec_rotate_imm;
-              shfiter_use_imm32 <= dec_use_imm32;
-              alu_b <= shifter_operand;
-              alu_opcode <= dec_opcode;
+              $display("[CPU] -------------------------------");
             end
 
             LOAD_STORE_IMM: begin
@@ -214,12 +204,13 @@ module cpu (
         end
 
         WRITE_BACK: begin
-          $display("[CPU] WRITE_BACK");
+          $display("[CPU] ===== WRITE_BACK");
+          $display("[CPU] alu %08x , %08x, %08x", alu_a, shifter_operand, alu_out);
           register[dec_rd] <= alu_out;
         end
 
         DONE: begin
-          $display("[CPU] DONE");
+          $display("[CPU] ===== DONE");
         end
       endcase
     end
@@ -250,6 +241,7 @@ module cpu (
         end
       end
       EXECUTE: begin
+        decode_enable = 0;
         next_state = WRITE_BACK;
         // next_state = EXECUTE;
       end

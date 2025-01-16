@@ -50,6 +50,7 @@ module decoder (
           end else begin
             shift_amount <= instruction[11:7];
           end
+          use_imm32 <= 0;
         end
 
         DATA_PROCESSING_IMM: begin
