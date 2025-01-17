@@ -43,7 +43,7 @@ async def tb_cpu(dut):
 
   p = Parser()
   e = Encoder()
-  objs = p.parse("testdata/test1.s")
+  objs = p.parse("testdata/test2.s")
 
   for o in objs:
     addr, bits = e.encode(o)
@@ -57,7 +57,7 @@ async def tb_cpu(dut):
       if int(dut.state.value) == 0b101:
         break
 
-    dut._log.info(f"dec_rn: {dut.dec_rn.value}, dec_rd: {dut.dec_rd.value}")
+    dut._log.info(f"dec_rn: {dut.dec_rn.value.integer}, dec_rd: {dut.dec_rd.value.integer}")
     dut._log.info(f"alu_out: {dut.alu_out.value}")
 
     await print_register_map(dut)

@@ -1,6 +1,20 @@
 # Implement ARM CPU in Verilog
 
-## CPU Core
+## Pipeline
+
+## Interfaces
+
+## General Registers
+
+## Bus
+
+## Instruction Decoder
+
+## ALU
+
+## Barrel Shifter
+
+--------------------------------------
 
 ### Registers
 General Registers
@@ -46,12 +60,6 @@ Memory Bus Interface
 - address
 - data in
 - data out
-
-
-## Memory
-BRAM
-
-
 
 
 
