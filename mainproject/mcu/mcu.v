@@ -6,16 +6,16 @@ module mcu(
   wire [31:0] data_in_bus;
   wire [31:0] data_out_bus;
 
-  reg memory_write;
-  reg memory_read;
+  wire memory_write;
+  wire memory_read;
 
   reg flash_erase;
-  reg flash_busy;
+  wire flash_busy;
 
-  reg [31:0] bram_data_out;
-  reg [31:0] sram_data_out;
-  reg [31:0] flash_data_out;
-  reg [31:0] mmio_data_out;
+  wire [31:0] bram_data_out;
+  wire [31:0] sram_data_out;
+  wire [31:0] flash_data_out;
+  wire [31:0] mmio_data_out;
 
   cpu cpu_inst(
     .clk(clk),
@@ -73,6 +73,13 @@ module mcu(
   //   .tx_data_in(),
   //   .baud_tick_max()
   // );
+
+  always @(posedge clk) begin
+    if (!n_reset) begin
+      
+    end else begin
+    end
+  end
 
   always @(*) begin
     case (address_bus[31:16])

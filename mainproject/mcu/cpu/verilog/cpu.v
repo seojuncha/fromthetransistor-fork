@@ -75,6 +75,9 @@ module cpu (
   wire dec_mem_read;
   wire dec_mem_write;
 
+  assign dec_mem_read = memory_read;
+  assign dec_mem_write = memory_write;
+
   decoder decoder_inst(
     .clk(clk),
     .enable(decode_enable),
@@ -190,14 +193,29 @@ module cpu (
             end
 
             LOAD_STORE_IMM: begin
+              $display("[CPU] LOAD_STORE_IMM");
+              if (dec_is_added_offset)
+                address <= dec_rn + dec_offset_12;
+              else
+                address <= dec_rn - dec_offset_12;
+
+              $display("[CPU] -------------------------------");
             end
 
             LOAD_STORE_REG: begin
+              $display("[CPU] LOAD_STORE_REG");
+              if (dec_is_added_offset)
+                address <= dec_rn + shifter_operand;
+              else
+                address <= dec_rn - shifter_operand;
+              $display("[CPU] -------------------------------");
             end
 
             BRANCH: begin
+              $display("[CPU] BRANCH");
+              $display("[CPU] -------------------------------");
             end
-            default:  $display("[CPU] UNKNOWN TYPE: %x", ir[27:25]);
+            default:  $display("[CPU] Unknown instruction type: %x", ir[27:25]);
           endcase
 
           alu_a <= register[dec_rn];
