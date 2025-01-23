@@ -2,7 +2,8 @@ from as_obj import *
 from define import *
 
 class Encoder:
-  def __init__(self):
+  def __init__(self, debug=False):
+    self._debug = debug
     self.encoding_bits = 0x00000000
 
   def encode(self, obj: InstructionObj):

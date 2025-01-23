@@ -4,6 +4,7 @@ results.xml
 gtkwave
 verilator
 obj_dir
+gnu_out
 *.o
 *.bin
 *.elf

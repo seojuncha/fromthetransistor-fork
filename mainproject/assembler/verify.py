@@ -8,6 +8,9 @@ from capstone import Cs, CS_ARCH_ARM, CS_MODE_ARM
 from as_parser import Parser
 from as_encoder import Encoder
 
+def build_reference():
+  os.system("")
+
 def check(path):
   comp1 = dict()
   with open(path+".o", "rb") as of:
@@ -48,4 +51,4 @@ def check(path):
 if __name__ == "__main__":
   # check("sample/from-chatgpt/branch")
   # check("sample/from-claude/arm-test-data")
-  check("sample/data1")
+  # check("sample/data1")

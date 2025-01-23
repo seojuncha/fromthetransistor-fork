@@ -2,7 +2,8 @@ from as_obj import *
 from define import *
 
 class Parser:
-  def __init__(self):
+  def __init__(self, debug=False):
+    self._debug = debug
     self._not_support_count = 0
     self._inst_num = 0
     self._label_map = dict()
@@ -34,7 +35,7 @@ class Parser:
     line_elem = line.split(" ")
     mnemonic = line_elem[0].casefold()
 
-    # print(f"LINE: {line_elem}")
+    if self._debug: print(f"LINE: {line_elem}")
 
     if mnemonic in data_opcode_map.keys():
       reg = line_elem[1].rstrip(",")
