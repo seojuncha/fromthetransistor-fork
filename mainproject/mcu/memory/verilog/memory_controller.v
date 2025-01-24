@@ -13,7 +13,7 @@ module memory_controller(
   reg [31:0] bram_idata, sram_idata, flash_idata, peripheral_idata;
   wire decode_error, flash_error;
 
-  memory_decoder memdec(
+  address_decoder addr_dec(
     .addr(addr),
     .bram_select(bram_selected),
     .sram_select(sram_selected),
@@ -87,6 +87,7 @@ module memory_controller(
         else if (peripheral_selected) peripheral_idata = idata_from_cpu;
         else error = 1;
       end else begin
+        $display("[MEM][CTL] [%0t] unknown error", $realtime);
         error = 1;
       end
     end

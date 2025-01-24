@@ -9,6 +9,12 @@ module bram (
 );
   reg [31:0] memory [0:16383];
 
+  // Only for debug
+  initial begin
+    $readmemb("bootrom.bin.txt", memory);
+    $display("mem[0] 0x%08x mem[1] 0x%08x mem[2] 0x%08x mem[3] 0x%08x", memory[0], memory[1], memory[2], memory[3]);
+  end
+
   always @(posedge clk or negedge rst) begin
     if (!rst) begin
       integer i;
@@ -17,10 +23,14 @@ module bram (
       end
       odata <= 32'd0;
     end else begin
-      if (wr_en)
+      if (wr_en) begin
+        $display("1111111111111: 0x%04x", addr);
         memory[addr] <= idata;
-      if (rd_en)
+      end
+      if (rd_en) begin
+        $display("2222222222222: 0x%04x", addr);
         odata <= memory[addr];
+      end
     end
   end
 

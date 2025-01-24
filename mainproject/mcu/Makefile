@@ -1,12 +1,19 @@
 SIM = icarus
 TOPLEVEL_LANG = verilog
+TOPLEVEL = mcu
+MODULE = tb_mcu
 VERILOG_SOURCES += \
+mcu.v \
 cpu/verilog/cpu.v \
+cpu/verilog/register_files.v \
+cpu/verilog/decoder.v \
 cpu/verilog/alu.v \
 cpu/verilog/barrel_shifter.v \
-memory/bram.v \
-memory/sram.v \
-memory/flash.v \
-uart-controller/verilog/uart.v
+memory/verilog/memory_controller.v \
+memory/verilog/address_decoder.v \
+memory/verilog/bram.v \
+memory/verilog/sram.v \
+memory/verilog/flash.v \
+memory/verilog/peripheral.v
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

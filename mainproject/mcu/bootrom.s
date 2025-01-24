@@ -2,19 +2,10 @@
 .global _start
 
 _start:
-  @ Initialie general registers
-  mov r0, #0
-  mov r1, #0
-  mov r2, #0
-  mov r3, #0
-  mov r4, #0
-  mov r5, #0
-  mov r6, #0
-  mov r7, #0
-  mov r8, #0
-  mov r9, #0
-  mov r10, #0
-  mov r11, #0
-  mov r12, #0
+  mov r0, #1  @ r0 = 1
+  mov r1, #2  @ r1 = 2
+  
+  add r2, r0, #3   @ r2 = 1 + 3 = 4
+  add r3, r1, r2   @ r3 = 2 + 4 = 6
 
-  b 0x00000000
+  sub r2, r3, #4  @ r2 = 2

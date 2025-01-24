@@ -1,64 +1,36 @@
 module mcu(
   input clk,
-  input n_reset,
+  input rst
 );
   wire [31:0] address_bus;
   wire [31:0] data_in_bus;
   wire [31:0] data_out_bus;
 
-  wire memory_write;
-  wire memory_read;
+  wire write_data_to_mem;
+  wire read_data_from_mem;
 
-  reg flash_erase;
-  wire flash_busy;
+  reg memory_error;
 
-  wire [31:0] bram_data_out;
-  wire [31:0] sram_data_out;
-  wire [31:0] flash_data_out;
-  wire [31:0] mmio_data_out;
-
-  cpu cpu_inst(
+  cpu cpu_core(
     .clk(clk),
-    .n_reset(n_reset),
-    .address(address_bus)
-    .data_in(data_in_bus),
-    .data_out(data_out_bus),
-    .memory_read(memory_read),
-    .memory_write(memory_write),
+    .rst(rst),
+    .little_endian_en(1'b1),
+    .memory_addr(address_bus),
+    .data_from_memory(data_in_bus),
+    .data_to_memory(data_out_bus),
+    .read_from_memory(read_data_from_mem),
+    .write_to_memory(write_data_to_mem)
   );
 
-  // memory
-  
-
-  // peripheral
-  // TODO: need a peripheral controller.
-  // uart uart_inst(
-  //   .clk(clk),
-  //   .rst(n_reset),
-  //   .rx(),
-  //   .rx_data_out(),
-  //   .tx_start(),
-  //   .tx(),
-  //   .tx_ready(),
-  //   .tx_busy(),
-  //   .tx_data_in(),
-  //   .baud_tick_max()
-  // );
-
-  always @(posedge clk) begin
-    if (!n_reset) begin
-
-    end else begin
-    end
-  end
-
-  always @(*) begin
-    case (address_bus[31:16])
-      16'h0000: data_in_bus = bram_data_out;
-      16'h0001: data_in_bus = sram_data_out;
-      16'h0002: data_in_bus = flash_data_out;
-      16'h0003: data_in_bus = mmio_data_out;
-    endcase
-  end
+  memory_controller mem_ctrl(
+    .clk(clk),
+    .rst(rst),
+    .cpu_read_mem(read_data_from_mem),
+    .cpu_write_mem(write_data_to_mem),
+    .addr(address_bus),
+    .idata_from_cpu(data_out_bus),
+    .odata_to_cpu(data_in_bus),
+    .error(memory_error)
+  );
 
 endmodule

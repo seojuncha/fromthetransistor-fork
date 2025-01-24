@@ -1,4 +1,4 @@
-module memory_decoder(
+module address_decoder(
   input [31:0] addr,
   output reg bram_select,
   output reg sram_select,
