@@ -12,14 +12,15 @@ module memory_controller(
   wire bram_selected, sram_selected, flash_selected, peripheral_selected;
   wire [31:0] bram_odata, sram_odata, flash_odata, peripheral_odata;
   reg [31:0] bram_idata, sram_idata, flash_idata, peripheral_idata;
-  wire flash_error;
+  wire decode_error, flash_error;
 
   memory_decoder memdec(
     .addr(addr),
     .bram_select(bram_selected),
     .sram_select(sram_selected),
     .flash_select(flash_selected),
-    .peripheral_select(peripheral_selected)
+    .peripheral_select(peripheral_selected),
+    .error(decode_error)
   );
 
   bram bram_mem(
@@ -54,7 +55,6 @@ module memory_controller(
     .busy(flash_busy),
     .error(flash_error)
   );
-  assign flash_error = error;
 
   peripheral peripheral_mem(
     .clk(clk),
@@ -66,21 +66,25 @@ module memory_controller(
   );
 
   always @(*) begin
-    error = 0;
-    if (cpu_read_mem) begin
-      if (bram_selected) odata_to_cpu = bram_odata;
-      else if (sram_selected) odata_to_cpu = sram_odata;
-      else if (flash_selected) odata_to_cpu = flash_odata;
-      else if (peripheral_selected) odata_to_cpu = peripheral_odata;
-      else error = 1;
-    end else if (cpu_write_mem) begin
-      if (bram_selected) bram_idata = idata_from_cpu;
-      else if (sram_selected) sram_idata = idata_from_cpu;
-      else if (flash_selected) flash_idata = idata_from_cpu;
-      else if (peripheral_selected) peripheral_idata = idata_from_cpu;
-      else error = 1;
-    end else begin
-      error = 1;
+    if (decode_error) error = 1;
+    else if (flash_error) error = 1;
+    else begin
+      $display("bram[%b] sram[%b] flash[%b] peripheral[%b]", bram_selected, sram_selected, flash_selected, peripheral_selected);
+      if (cpu_read_mem) begin
+        if (bram_selected) odata_to_cpu = bram_odata;
+        else if (sram_selected) odata_to_cpu = sram_odata;
+        else if (flash_selected) odata_to_cpu = flash_odata;
+        else if (peripheral_selected) odata_to_cpu = peripheral_odata;
+        else error = 1;
+      end else if (cpu_write_mem) begin
+        if (bram_selected) bram_idata = idata_from_cpu;
+        else if (sram_selected) sram_idata = idata_from_cpu;
+        else if (flash_selected) flash_idata = idata_from_cpu;
+        else if (peripheral_selected) peripheral_idata = idata_from_cpu;
+        else error = 1;
+      end else begin
+        error = 1;
+      end
     end
   end
 

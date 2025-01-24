@@ -19,9 +19,9 @@ module flash(
   reg [31:0] memory [0:1023];
 
   // Only for debug
-  initial begin
-    $readmemb("bootrom.bin", memory);
-  end
+  // initial begin
+  //   $readmemb("bootrom.bin", memory);
+  // end
 
   always @(posedge clk) begin
     case (state)
