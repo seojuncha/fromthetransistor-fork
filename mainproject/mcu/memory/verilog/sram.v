@@ -3,9 +3,9 @@ module sram (
   input rst,
   input rd_en,   // read enable
   input wr_en,   // write enable
-  input [15:0] address,
-  input [31:0] data_in,
-  output reg [31:0] data_out
+  input [15:0] addr,
+  input [31:0] idata,
+  output reg [31:0] odata
 );
   reg [31:0] memory [0:16383];
 
@@ -17,13 +17,16 @@ module sram (
 
   always @(posedge clk or negedge rst) begin
     if (!rst) begin
-      memory <= 0;
-      data_out <= 0;
+      integer i;
+      for (i = 0; i < 16383; i=i+1) begin
+        memory[i] = 32'd0;
+      end
+      odata <= 0;
     end else begin
       if (wr_en)
-        memory[address] <= data_in;
+        memory[addr] <= idata;
       if (rd_en)
-        data_out <= memory[address];
+        odata <= memory[addr];
     end
   end
 
