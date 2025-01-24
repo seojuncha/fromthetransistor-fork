@@ -1,6 +1,7 @@
 module peripheral(
   input clk,
   input rst,
+  input en,
   input rd_en,
   input wr_en,
   input [11:0] addr,

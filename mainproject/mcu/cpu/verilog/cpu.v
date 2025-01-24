@@ -144,20 +144,24 @@ module cpu (
   // only for debug
   initial begin
     $monitor("[%0t] PC [%x] IR [0x%8x]",$time, pc, ir);
+    for (int i = 0; i < 13; i = i + 1) begin
+      register[i] <= 32'd0;
+    end
+    sp <= 32'd0;
+    lr <= 32'd0;
+    pc <= 32'd0;
   end
 
   always @(posedge clk or negedge n_reset) begin
     if (!n_reset) begin
-      for (int i = 0; i < 13; i = i + 1) begin
-        register[i] <= 32'd0;
-      end
-      sp <= 32'd0;
-      lr <= 32'd0;
-      pc <= 32'd0;
+
+      // point to bootrom code in flash memory.
+      pc <= 32'h0002_0000;
     end else begin
       case (state)
         IDLE: begin
           $display("[CPU] ===== IDLE");
+          pc <= 32'h0002_0000;
         end
 
         FETCH: begin

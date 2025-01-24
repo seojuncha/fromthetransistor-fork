@@ -2,6 +2,15 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Timer
 
+def has_error(dut):
+  if dut.decode_error.value:
+    return "DECODE ERROR"
+  if dut.flash_error.value:
+    return "FLASH ERROR"
+  if dut.error.value:
+    return "CONTROLLER ERROR"
+  return "SUCCESS"
+
 def selected_memory_type(dut):
   if dut.bram_selected.value == 1: mem_type = "bram"
   elif dut.sram_selected.value == 1: mem_type = "sram"
@@ -11,38 +20,38 @@ def selected_memory_type(dut):
   return mem_type
 
 async def test_address_decoding(dut):
-  has_error = lambda error: "ERROR" if error else "SUCCESS"
+  # has_error = lambda error: "ERROR" if error else "SUCCESS"
 
   dut.addr.value = 0x0000_0000
-  dut._log.info(f"[{has_error(dut.decode_error.value)}] {selected_memory_type(dut)}")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
   dut.addr.value = 0x0000_ffff
-  dut._log.info(f"[{has_error(dut.decode_error.value)}] {selected_memory_type(dut)}")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
 
   dut.addr.value = 0x0001_0000
-  dut._log.info(f"[{has_error(dut.decode_error.value)}] {selected_memory_type(dut)}")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
   dut.addr.value = 0x0001_ffff
-  dut._log.info(f"[{has_error(dut.decode_error.value)}] {selected_memory_type(dut)}")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
 
   dut.addr.value = 0x0002_0000
-  dut._log.info(f"[{has_error(dut.decode_error.value)}] {selected_memory_type(dut)}")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
   dut.addr.value = 0x0002_ffff
-  dut._log.info(f"[{has_error(dut.decode_error.value)}] {selected_memory_type(dut)}")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
 
   dut.addr.value = 0x0003_0000
-  dut._log.info(f"[{has_error(dut.decode_error.value)}] {selected_memory_type(dut)}")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
   dut.addr.value = 0x0003_ffff
-  dut._log.info(f"[{has_error(dut.decode_error.value)}] {selected_memory_type(dut)}")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
 
   dut.addr.value = 0x0004_0000
-  dut._log.info(f"[{has_error(dut.decode_error.value)}] {selected_memory_type(dut)}")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
 
 
@@ -58,11 +67,39 @@ async def tb_memory(dut):
   dut.rst.value = 1
   await RisingEdge(dut.clk)
 
-  # Should be "error" with the "unkown" memory type.
-  has_error = "ERROR" if dut.error.value == 1 else "SUCCESS"
-  dut._log.info(f"[{has_error}] {selected_memory_type(dut)}")
+  # Initial state: should be "error" with the "unkown" memory type.
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
 
   await test_address_decoding(dut)
-  
+  await RisingEdge(dut.clk)
 
+  dut.cpu_write_mem.value = 1
+  dut.addr.value = 0x0000_0000
+  dut.idata_from_cpu.value = 2**32 - 1
+  await RisingEdge(dut.clk)
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} <- 0x{dut.bram_mem.idata.value.integer:08x}")
+
+
+  dut.addr.value = 0x0001_0000
+  dut.idata_from_cpu.value = (2**32 - 1) >> 16
+  await RisingEdge(dut.clk)
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} <- 0x{dut.sram_mem.idata.value.integer:08x}")
+
+
+  dut.cpu_read_mem.value = 1
+  dut.addr.value = 0x0000_0000
+  # CHCKE: Always need two clock cycles?
+  await RisingEdge(dut.clk)
+  await RisingEdge(dut.clk)
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.odata_to_cpu.value.integer:08x}")
+
+  dut.addr.value = 0x0001_0000
+  await RisingEdge(dut.clk)
+  await RisingEdge(dut.clk)
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.odata_to_cpu.value.integer:08x}")
+
+  dut.addr.value = 0x0001_0001
+  await RisingEdge(dut.clk)
+  await RisingEdge(dut.clk)
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.odata_to_cpu.value.integer:08x}")

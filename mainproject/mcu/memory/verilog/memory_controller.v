@@ -8,10 +8,8 @@ module memory_controller(
   output reg [31:0] odata_to_cpu,
   output reg error
 );
-
   wire bram_selected, sram_selected, flash_selected, peripheral_selected;
   wire [31:0] bram_odata, sram_odata, flash_odata, peripheral_odata;
-  reg [31:0] bram_idata, sram_idata, flash_idata, peripheral_idata;
   wire decode_error, flash_error;
 
   memory_decoder memdec(
@@ -26,31 +24,34 @@ module memory_controller(
   bram bram_mem(
     .clk(clk),
     .rst(rst),
+    .en(bram_selected),
     .rd_en(cpu_read_mem),
     .wr_en(cpu_write_mem),
     .addr(addr[15:0]),
-    .idata(bram_idata),
+    .idata(idata_from_cpu),
     .odata(bram_odata)
   );
 
   sram sram_mem(
     .clk(clk),
     .rst(rst),
+    .en(sram_selected),
     .rd_en(cpu_read_mem),
     .wr_en(cpu_write_mem),
     .addr(addr[15:0]),
-    .idata(sram_idata),
+    .idata(idata_from_cpu),
     .odata(sram_odata)
   );
 
 
   flash flash_mem(
     .clk(clk),
+    .en(flash_selected),
     .rd_en(cpu_read_mem),
     .wr_en(cpu_write_mem),
     .erase_en(flash_erase),
     .addr(addr[11:0]),
-    .idata(flash_idata),
+    .idata(idata_from_cpu),
     .odata(flash_odata),
     .busy(flash_busy),
     .error(flash_error)
@@ -58,33 +59,28 @@ module memory_controller(
 
   peripheral peripheral_mem(
     .clk(clk),
+    .en(peripheral_selected),
     .rd_en(cpu_read_mem),
     .wr_en(cpu_write_mem),
     .addr(addr[11:0]),
-    .idata(peripheral_idata),
+    .idata(idata_from_cpu),
     .odata(peripheral_odata)
   );
 
   always @(*) begin
+    error = 0;
     if (decode_error) error = 1;
     else if (flash_error) error = 1;
     else begin
-      $display("bram[%b] sram[%b] flash[%b] peripheral[%b]", bram_selected, sram_selected, flash_selected, peripheral_selected);
+      $display("[MEM][CTL] bram[%b] sram[%b] flash[%b] peripheral[%b]", bram_selected, sram_selected, flash_selected, peripheral_selected);
       if (cpu_read_mem) begin
         if (bram_selected) odata_to_cpu = bram_odata;
         else if (sram_selected) odata_to_cpu = sram_odata;
         else if (flash_selected) odata_to_cpu = flash_odata;
         else if (peripheral_selected) odata_to_cpu = peripheral_odata;
         else error = 1;
-      end else if (cpu_write_mem) begin
-        if (bram_selected) bram_idata = idata_from_cpu;
-        else if (sram_selected) sram_idata = idata_from_cpu;
-        else if (flash_selected) flash_idata = idata_from_cpu;
-        else if (peripheral_selected) peripheral_idata = idata_from_cpu;
-        else error = 1;
-      end else begin
-        error = 1;
-      end
+        $display("[MEM][CTL] read: 0x%08x", odata_to_cpu);
+      end 
     end
   end
 
