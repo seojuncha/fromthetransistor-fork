@@ -2,6 +2,12 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Timer
 
+BRAM_BASE_ADDRESS = 0x0000_0000
+SRAM_BASE_ADDRESS = 0x0001_0000
+FLASH_BASE_ADDRESS = 0x0002_0000
+PERIPHERAL_BASE_ADDRESS = 0X0003_0000
+ADDRESS_OFFSET_MAX = 0xffff
+
 def has_error(dut):
   if dut.decode_error.value:
     return "DECODE ERROR"
@@ -20,37 +26,35 @@ def selected_memory_type(dut):
   return mem_type
 
 async def test_address_decoding(dut):
-  # has_error = lambda error: "ERROR" if error else "SUCCESS"
-
-  dut.addr.value = 0x0000_0000
+  dut.addr.value = BRAM_BASE_ADDRESS
   dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
-  dut.addr.value = 0x0000_ffff
-  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
-  await Timer(1, units="ns")
-
-  dut.addr.value = 0x0001_0000
-  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
-  await Timer(1, units="ns")
-  dut.addr.value = 0x0001_ffff
+  dut.addr.value = BRAM_BASE_ADDRESS + ADDRESS_OFFSET_MAX
   dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
 
-  dut.addr.value = 0x0002_0000
+  dut.addr.value = SRAM_BASE_ADDRESS
   dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
-  dut.addr.value = 0x0002_ffff
-  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
-  await Timer(1, units="ns")
-
-  dut.addr.value = 0x0003_0000
-  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
-  await Timer(1, units="ns")
-  dut.addr.value = 0x0003_ffff
+  dut.addr.value = SRAM_BASE_ADDRESS + ADDRESS_OFFSET_MAX
   dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
 
-  dut.addr.value = 0x0004_0000
+  dut.addr.value = FLASH_BASE_ADDRESS
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
+  await Timer(1, units="ns")
+  dut.addr.value = FLASH_BASE_ADDRESS + ADDRESS_OFFSET_MAX
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
+  await Timer(1, units="ns")
+
+  dut.addr.value = PERIPHERAL_BASE_ADDRESS
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
+  await Timer(1, units="ns")
+  dut.addr.value = PERIPHERAL_BASE_ADDRESS + ADDRESS_OFFSET_MAX
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
+  await Timer(1, units="ns")
+
+  dut.addr.value = dut.addr.value + 1
   dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)}")
   await Timer(1, units="ns")
 
@@ -75,31 +79,31 @@ async def tb_memory(dut):
   await RisingEdge(dut.clk)
 
   dut.cpu_write_mem.value = 1
-  dut.addr.value = 0x0000_0000
+  dut.addr.value = BRAM_BASE_ADDRESS
   dut.idata_from_cpu.value = 2**32 - 1
   await RisingEdge(dut.clk)
   dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} <- 0x{dut.bram_mem.idata.value.integer:08x}")
 
 
-  dut.addr.value = 0x0001_0000
+  dut.addr.value = SRAM_BASE_ADDRESS
   dut.idata_from_cpu.value = (2**32 - 1) >> 16
   await RisingEdge(dut.clk)
   dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} <- 0x{dut.sram_mem.idata.value.integer:08x}")
-
+  await Timer(1, units="ns")
 
   dut.cpu_read_mem.value = 1
-  dut.addr.value = 0x0000_0000
-  # CHCKE: Always need two clock cycles?
+  dut.cpu_write_mem.value = 0
+  dut.addr.value = BRAM_BASE_ADDRESS
   await RisingEdge(dut.clk)
-  await RisingEdge(dut.clk)
-  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.odata_to_cpu.value.integer:08x}")
+  await Timer(1, units="ns")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.bram_odata.value.integer:08x}")
 
-  dut.addr.value = 0x0001_0000
+  dut.addr.value = SRAM_BASE_ADDRESS
   await RisingEdge(dut.clk)
-  await RisingEdge(dut.clk)
-  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.odata_to_cpu.value.integer:08x}")
+  await Timer(1, units="ns")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.sram_odata.value.integer:08x}")
 
-  dut.addr.value = 0x0001_0001
+  dut.addr.value = SRAM_BASE_ADDRESS + 1
   await RisingEdge(dut.clk)
-  await RisingEdge(dut.clk)
-  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.odata_to_cpu.value.integer:08x}")
+  await Timer(1, units="ns")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.sram_odata.value.integer:08x}")

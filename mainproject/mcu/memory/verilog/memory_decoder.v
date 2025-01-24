@@ -12,14 +12,14 @@ module memory_decoder(
     flash_select = 0;
     peripheral_select = 0;
     error = 0;
-    $display("[MEM][DEC] address: 0x%08x", addr);
+    $display("[MEM][DEC] [%0t] %b\n\taddr: 0x%08x", $realtime, error, addr);
     case (addr[31:16])
       16'h0000: bram_select = 1;
       16'h0001: sram_select = 1;
       16'h0002: flash_select = 1;
       16'h0003: peripheral_select = 1;
       default: begin
-        $display("[MEM][DEC] error: invalid address range");
+        $display("[MEM][DEC] [%0t] error:\n\tinvalid address range", $realtime);
         bram_select = 0;
         sram_select = 0;
         flash_select = 0;

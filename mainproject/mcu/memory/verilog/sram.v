@@ -1,7 +1,6 @@
 module sram (
   input clk,
   input rst,
-  input en,
   input rd_en,   // read enable
   input wr_en,   // write enable
   input [15:0] addr,
@@ -24,12 +23,10 @@ module sram (
       end
       odata <= 0;
     end else begin
-      if (en) begin
-        if (wr_en)
-          memory[addr] <= idata;
-        if (rd_en)
-          odata <= memory[addr];
-      end
+      if (wr_en)
+        memory[addr] <= idata;
+      if (rd_en)
+        odata <= memory[addr];
     end
   end
 

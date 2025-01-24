@@ -1,7 +1,6 @@
 module bram (
   input clk,
   input rst,
-  input en,
   input rd_en,
   input wr_en,
   input [15:0] addr,
@@ -18,12 +17,10 @@ module bram (
       end
       odata <= 32'd0;
     end else begin
-      if (en) begin
-        if (wr_en)
-          memory[addr] <= idata;
-        if (rd_en)
-          odata <= memory[addr];
-      end
+      if (wr_en)
+        memory[addr] <= idata;
+      if (rd_en)
+        odata <= memory[addr];
     end
   end
 
