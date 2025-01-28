@@ -2,8 +2,7 @@ module register_files(
   input [3:0] read_addr,
   input [3:0] write_addr,
   output [31:0] read_data,
-  input [31:0] write_data,
-  output program_counter
+  input [31:0] write_data
 );
   reg [31:0] register [0:15];
 
@@ -21,7 +20,7 @@ module register_files(
   assign read_data = register[read_addr];
 
   always @(*) begin
-    $display("[%0t][REGFILE] update register: %2d", $realtime, write_addr);
+    $display("[%0t][REGFILE] update register [%2d] 0x%08h", $realtime, write_addr, write_data);
     register[write_addr] = write_data;
   end
 

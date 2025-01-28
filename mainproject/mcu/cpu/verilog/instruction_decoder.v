@@ -1,4 +1,4 @@
-module decoder (
+module instruction_decoder (
   input clk,
   input enable,
   // common
@@ -39,10 +39,11 @@ module decoder (
 
   always @(posedge clk) begin
     if (enable) begin
+      $display("[%0t] instruction: 0x%08h", $realtime, instruction);
       valid <= 1; // Focibly 1 now.
       case (instruction[27:25])
         DATA_PROCESSING_REG: begin
-          $display("[DECODER] DATA_PROCESSING_REG");
+          $display("[%0t][CPU][DECODER] DATA_PROCESSING_REG", $realtime);
           shift <= instruction[6:5];
           if (instruction[20]) begin
             use_rs <= instruction[20];
@@ -54,7 +55,7 @@ module decoder (
         end
 
         DATA_PROCESSING_IMM: begin
-          $display("[DECODER] DATA_PROCESSING_IMM");
+          $display("[%0t][CPU][DECODER] DATA_PROCESSING_IMM", $realtime);
           rotate_imm <= instruction[11:8];
           imm8 <= instruction[7:0];
           use_imm32 <= 1;
@@ -83,7 +84,7 @@ module decoder (
       endcase
 
       if (instruction[27:25] == DATA_PROCESSING_REG || instruction[27:25] == DATA_PROCESSING_IMM) begin
-        $display("[DECODER] is data processing: %b", instruction[24:21]);
+        $display("[%0t][CPU][DECODER] is data processing: %b", $realtime, instruction[24:21]);
         opcode <= instruction[24:21];
         mem_read <= 1'b0;
         mem_write <= 1'b0;
@@ -96,7 +97,7 @@ module decoder (
       end
 
       if (instruction[27:25] == DATA_PROCESSING_REG || instruction[27:25] == LOAD_STORE_REG) begin
-        $display("[DECODER] use register");
+        $display("[%0t][CPU][DECODER] use register", $realtime);
         rm <= instruction[3:0];
       end
 
