@@ -17,10 +17,16 @@ module flash(
   reg [1:0] state;
 
   reg [31:0] memory [0:1023];
+  wire [9:0] word_addr;
+  assign word_addr = addr[11:2];
 
   // Only for debug
   initial begin
     $readmemb("bootrom.bin.txt", memory);
+    $display("mem[0] 0x%08x mem[1] 0x%08x mem[2] 0x%08x mem[3] 0x%08x", memory[0], memory[1], memory[2], memory[3]);
+    odata = 32'd0;
+    busy = 0;
+    error = 0;
   end
 
   always @(posedge clk) begin
@@ -30,12 +36,13 @@ module flash(
         error <= 0;
 
         if (rd_en) begin
-          odata <= memory[addr];
+          $display("[%0t] FLASH read [%d] 0x%08x", $realtime, word_addr, memory[word_addr]);
+          odata <= memory[word_addr];
           state <= READ;
         end else if (wr_en) begin
           // Already cleaned~
-          if (memory[addr] == 32'd0) begin
-            memory[addr] <= idata;
+          if (memory[word_addr] == 32'd0) begin
+            memory[word_addr] <= idata;
             state <= WRITE;
           end else begin
             $display("[MEM][FLASH] write to non-erased area");
@@ -63,6 +70,10 @@ module flash(
 
       ERASE: begin
         busy <= 1;
+        state <= IDLE;
+      end
+
+      default: begin
         state <= IDLE;
       end
     endcase

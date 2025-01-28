@@ -56,19 +56,21 @@ End address = start address + 64K - 1
 
 So, Memory Map is
 ```
+Flash
+size: 4K
+start: 0x0000_0000 - 0x0000_0FFF
+```
+
+```
 BRAM
 size: 64K
-range: 0x0000_0000 - 0x0000_FFFF
+range: 0x0001_0000 - 0x0000_FFFF
 ```
+
 ```
 SRAM
 size: 64K
-start: 0x0001_0000 - 0x0001_FFFF
-```
-```
-Flash
-size: 4K
-start: 0x0002_0000 - 0x0002_0FFF
+start: 0x0002_0000 - 0x0001_FFFF
 ```
 ```
 MMIO

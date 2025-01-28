@@ -2,16 +2,10 @@ module register_files(
   input [3:0] read_addr,
   input [3:0] write_addr,
   output [31:0] read_data,
-  input [31:0] write_data
+  input [31:0] write_data,
+  output program_counter
 );
   reg [31:0] register [0:15];
-  wire stack_pointer;
-  wire link_register;
-  wire program_counter;
-
-  assign stack_pointer = register[13];
-  assign link_register = register[14];
-  assign program_count = register[15];
 
   /**
     * CPSR: Current Program Status Register
@@ -21,12 +15,13 @@ module register_files(
   // reg [31:0] cpsr;
 
   initial begin
-    $monitor("[REGFILE][%0t] read %2d / 0x%08x  write %2d / 0x%08x", $realtime, read_addr, read_data, write_addr, write_data);
+    $monitor("[%0t][REGFILE] read %2d / 0x%08x  write %2d / 0x%08x", $realtime, read_addr, read_data, write_addr, write_data);
   end
 
   assign read_data = register[read_addr];
 
   always @(*) begin
+    $display("[%0t][REGFILE] update register: %2d", $realtime, write_addr);
     register[write_addr] = write_data;
   end
 

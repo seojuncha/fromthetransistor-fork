@@ -84,6 +84,11 @@ async def tb_memory(dut):
   await RisingEdge(dut.clk)
   dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} <- 0x{dut.bram_mem.idata.value.integer:08x}")
 
+  dut.addr.value = BRAM_BASE_ADDRESS + 4
+  dut.idata_from_cpu.value = 0xcfcfefef
+  await RisingEdge(dut.clk)
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} <- 0x{dut.bram_mem.idata.value.integer:08x}")
+
 
   dut.addr.value = SRAM_BASE_ADDRESS
   dut.idata_from_cpu.value = (2**32 - 1) >> 16
@@ -94,6 +99,11 @@ async def tb_memory(dut):
   dut.cpu_read_mem.value = 1
   dut.cpu_write_mem.value = 0
   dut.addr.value = BRAM_BASE_ADDRESS
+  await RisingEdge(dut.clk)
+  await Timer(1, units="ns")
+  dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.bram_odata.value.integer:08x}")
+
+  dut.addr.value = BRAM_BASE_ADDRESS + 4
   await RisingEdge(dut.clk)
   await Timer(1, units="ns")
   dut._log.info(f"[{has_error(dut)}] {selected_memory_type(dut)} -> 0x{dut.bram_odata.value.integer:08x}")

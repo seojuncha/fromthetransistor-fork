@@ -65,8 +65,10 @@ module memory_controller(
   );
 
   initial begin
-    $monitor("[MEM][CTL] [%0t]  %b\n\t[r=%b/w=%b] b:%b, s:%b, f:%b, p:%b\n\tread: 0x%08x\twrite: 0x%08x",
-     $realtime, error, cpu_read_mem, cpu_write_mem, bram_selected, sram_selected, flash_selected, peripheral_selected, odata_to_cpu, idata_from_cpu);
+    // $monitor("[MEM][CTL] [%0t]  %b\n\t[r=%b/w=%b] b:%b, s:%b, f:%b, p:%b\n\tread: 0x%08x\twrite: 0x%08x",
+    //  $realtime, error, cpu_read_mem, cpu_write_mem, bram_selected, sram_selected, flash_selected, peripheral_selected, odata_to_cpu, idata_from_cpu);
+    odata_to_cpu = 32'd0;
+    error = 0;
   end
 
   always @(*) begin
@@ -80,6 +82,8 @@ module memory_controller(
         else if (flash_selected) odata_to_cpu = flash_odata;
         else if (peripheral_selected) odata_to_cpu = peripheral_odata;
         else error = 1;
+        $display("[%0t][MEM][CTL] %b   [r=%b/w=%b] b:%b, s:%b, f:%b, p:%b read: 0x%08x", 
+            $realtime, error, cpu_read_mem, cpu_write_mem, bram_selected, sram_selected, flash_selected, peripheral_selected, odata_to_cpu);
       end else if (cpu_write_mem) begin
         if (bram_selected) bram_idata = idata_from_cpu;
         else if (sram_selected) sram_idata = idata_from_cpu;
@@ -87,7 +91,7 @@ module memory_controller(
         else if (peripheral_selected) peripheral_idata = idata_from_cpu;
         else error = 1;
       end else begin
-        $display("[MEM][CTL] [%0t] unknown error", $realtime);
+        $display("[%0t][MEM][CTL] unknown error", $realtime);
         error = 1;
       end
     end

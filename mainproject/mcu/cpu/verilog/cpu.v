@@ -6,7 +6,8 @@ module cpu (
   input [31:0] data_from_memory,
   output reg[31:0] data_to_memory,
   output reg read_from_memory,
-  output reg write_to_memory
+  output reg write_to_memory,
+  input memory_error
 );
   localparam REG_PC = 4'd15;
 
@@ -28,7 +29,7 @@ module cpu (
 
   reg [31:0] address_register, read_data_register, write_data_register;
 
-  assign memory_addr = address_register;
+  assign memory_addr = (state == FETCH) ? read_data_from_reg : address_register;
 
   // reg [31:0] cpsr;
   // wire neg_flag;
@@ -41,7 +42,6 @@ module cpu (
   // assign carry_flag = cpsr[29];
   // assign overflow_flag = cpsr[28];
 
-  // instruction register
   reg [31:0] instruction_register;
 
   // decoder interface
@@ -159,111 +159,109 @@ module cpu (
   // end
 
   initial begin
-    $monitor("[CPU][CORE] [%0t] [r=%b/w=%b]\n\t0x[%08x] read_from: 0x[%08x]\t\twrite_to: 0x[%08x]",
-      $realtime, read_from_memory, write_to_memory, memory_addr, read_from_memory, write_to_memory);
+    // $monitor("[%0t][CPU][CORE]    [r=%b/w=%b]  addr: [0x%08x] read : [0x%08x]\t\twrite : [0x%08x]",
+    //   $realtime, read_from_memory, write_to_memory, memory_addr, read_data_register, write_data_register);
+    address_register <= 32'h0000_0000;
+    read_data_register <= 32'd0;
+    write_data_register <= 32'd0;
+    instruction_register <= 32'd0;
+  end
+
+  always @(posedge clk) begin
+    case (state)
+      IDLE: begin
+        write_data_to_reg <= 32'h0000_0000;
+        address_register <= 32'h0000_0000;
+        read_data_register <= 32'd0;
+        write_data_register <= 32'd0;
+
+        read_from_memory <= 1;
+        write_to_memory <= 0;
+
+        read_reg_addr <= REG_PC;
+        write_reg_addr <= REG_PC;
+      end
+
+      FETCH: begin
+        address_register <= read_data_from_reg + 4;
+        write_data_to_reg <= read_data_from_reg + 4;
+
+        // for convinient, little->big
+        if (little_endian_en)
+          instruction_register <= (data_from_memory[7:0] << 24)
+                                  | (data_from_memory[15:8] << 16)
+                                  | (data_from_memory[23:16] << 8)
+                                  | (data_from_memory[31:24]);
+        else
+          instruction_register <= data_from_memory;
+      end
+
+      DECODE: begin
+        // $display("[%0t][CPU][CORE][DECODE]", $realtime);
+
+      end
+
+      EXECUTE: begin
+        // $display("[%0t][CPU][CORE][EXECUTE] instruction: 0x%08x", $realtime, instruction_register);
+        // case (ir[27:25])
+        //   DATA_PROCESSING_REG: begin
+        //     $display("[CPU] DATA_PROCESSING_REG");
+        //     shift_value <= register[dec_rm];
+        //     shift_amt <= dec_shift_amount;
+        //     $display("[CPU] -------------------------------");
+        //   end
+
+        //   DATA_PROCESSING_IMM: begin
+        //     $display("[CPU] DATA_PROCESSING_IMM");
+        //     shift_value <= dec_imm8;
+        //     shift_amt <= dec_rotate_imm;
+        //     $display("[CPU] -------------------------------");
+        //   end
+
+        //   LOAD_STORE_IMM: begin
+        //     $display("[CPU] LOAD_STORE_IMM");
+        //     if (dec_is_added_offset)
+        //       address <= dec_rn + dec_offset_12;
+        //     else
+        //       address <= dec_rn - dec_offset_12;
+
+        //     $display("[CPU] -------------------------------");
+        //   end
+
+        //   LOAD_STORE_REG: begin
+        //     $display("[CPU] LOAD_STORE_REG");
+        //     if (dec_is_added_offset)
+        //       address <= dec_rn + shifter_operand;
+        //     else
+        //       address <= dec_rn - shifter_operand;
+        //     $display("[CPU] -------------------------------");
+        //   end
+
+        //   BRANCH: begin
+        //     $display("[CPU] BRANCH");
+        //     $display("[CPU] -------------------------------");
+        //   end
+        //   default:  $display("[CPU] Unknown instruction type: %x", ir[27:25]);
+        // endcase
+
+        // alu_a <= register[dec_rn];
+      end
+
+      WRITE_BACK: begin
+        $display("[CPU][CORE][WRITE_BACK]");
+        // $display("[CPU] alu %08x , %08x, %08x", alu_a, shifter_operand, alu_out);
+        // register[dec_rd] <= alu_out;
+      end
+
+      DONE: begin
+        $display("[CPU][CORE][DONE]");
+      end
+    endcase
   end
 
   always @(posedge clk or negedge rst) begin
     if (!rst) begin
-      write_reg_addr <= REG_PC;
-      write_data_to_reg <= 32'h0000_0000;
-
-      address_register <= 32'd0;
-      read_data_register <= 32'd0;
-      write_data_register <= 32'd0;
-
-      read_from_memory <= 1;
-      write_to_memory <= 0;
-    end else begin
-      case (state)
-        IDLE: begin
-          $display("[CPU][IDLE][%0t]", $realtime);
-          read_reg_addr <= REG_PC;
-          write_reg_addr <= REG_PC;
-        end
-
-        FETCH: begin
-          $display("[CPU][FETCH][%0t]", $realtime);
-          address_register <= read_data_from_reg;
-          read_from_memory <= 1;
-          read_data_register <= data_from_memory;
-
-          write_data_to_reg <= read_data_from_reg + 4;
-        end
-
-        DECODE: begin
-          $display("[CPU][DECODE][%0t]", $realtime);
-          // for convinient, little->big
-          if (little_endian_en)
-            instruction_register <= (read_data_register[7:0] << 24)
-                                    | (read_data_register[15:8] << 16)
-                                    | (read_data_register[23:16] << 8)
-                                    | (read_data_register[31:24]);
-          else
-            instruction_register <= read_data_register;
-        end
-
-        EXECUTE: begin
-          $display("[CPU][EXECUTE][%0t]", $realtime);
-          // case (ir[27:25])
-          //   DATA_PROCESSING_REG: begin
-          //     $display("[CPU] DATA_PROCESSING_REG");
-          //     shift_value <= register[dec_rm];
-          //     shift_amt <= dec_shift_amount;
-          //     $display("[CPU] -------------------------------");
-          //   end
-
-          //   DATA_PROCESSING_IMM: begin
-          //     $display("[CPU] DATA_PROCESSING_IMM");
-          //     shift_value <= dec_imm8;
-          //     shift_amt <= dec_rotate_imm;
-          //     $display("[CPU] -------------------------------");
-          //   end
-
-          //   LOAD_STORE_IMM: begin
-          //     $display("[CPU] LOAD_STORE_IMM");
-          //     if (dec_is_added_offset)
-          //       address <= dec_rn + dec_offset_12;
-          //     else
-          //       address <= dec_rn - dec_offset_12;
-
-          //     $display("[CPU] -------------------------------");
-          //   end
-
-          //   LOAD_STORE_REG: begin
-          //     $display("[CPU] LOAD_STORE_REG");
-          //     if (dec_is_added_offset)
-          //       address <= dec_rn + shifter_operand;
-          //     else
-          //       address <= dec_rn - shifter_operand;
-          //     $display("[CPU] -------------------------------");
-          //   end
-
-          //   BRANCH: begin
-          //     $display("[CPU] BRANCH");
-          //     $display("[CPU] -------------------------------");
-          //   end
-          //   default:  $display("[CPU] Unknown instruction type: %x", ir[27:25]);
-          // endcase
-
-          // alu_a <= register[dec_rn];
-        end
-
-        WRITE_BACK: begin
-          $display("[CPU][WRITE_BACK]");
-          // $display("[CPU] alu %08x , %08x, %08x", alu_a, shifter_operand, alu_out);
-          // register[dec_rd] <= alu_out;
-        end
-
-        DONE: begin
-          $display("[CPU][DONE]");
-        end
-      endcase
-    end
-  end
-
-  always @(posedge clk or negedge rst) begin
-    if (!rst) begin
+      $display("[%0t][CPU] [RESET]", $realtime);
       state <= IDLE;
     end else begin
       state <= next_state;
@@ -280,34 +278,36 @@ module cpu (
 
     case (state)
       IDLE: begin
-        next_state = FETCH;
+        if (!memory_error)
+          next_state = FETCH;
       end
       FETCH: begin
-        $display("[CPU][CORE] state changed: IDLE -> FETCH");
+        // $display("[CPU][CORE] state changed: IDLE -> FETCH");
         // decode_enable = 1;
         // read_from_memory = 1;
         next_state = DECODE;
       end
       DECODE: begin
-        $display("[CPU][CORE] state changed: FETCH -> DECODE");
-        next_state = EXECUTE;
+        // $display("[CPU][CORE] state changed: FETCH -> DECODE");
+        next_state = FETCH;
+        // next_state = EXECUTE;
         // if (decode_valid) begin
         //   next_state = EXECUTE;
         // end
       end
-      EXECUTE: begin
-        $display("[CPU][CORE] state changed: DECODE -> EXECUTE");
-        next_state = WRITE_BACK;
-        // next_state = EXECUTE;
-      end
-      WRITE_BACK: begin
-        $display("[CPU][CORE] state changed: EXECUTE -> WRITE_BACK");
-        next_state = DONE;
-      end
-      DONE: begin
-        $display("[CPU][CORE] state changed: WRITE_BACK -> DONE");
-        next_state = FETCH;
-      end
+      // EXECUTE: begin
+      //   $display("[CPU][CORE] state changed: DECODE -> EXECUTE");
+      //   next_state = WRITE_BACK;
+      //   // next_state = EXECUTE;
+      // end
+      // WRITE_BACK: begin
+      //   $display("[CPU][CORE] state changed: EXECUTE -> WRITE_BACK");
+      //   next_state = DONE;
+      // end
+      // DONE: begin
+      //   $display("[CPU][CORE] state changed: WRITE_BACK -> DONE");
+      //   next_state = FETCH;
+      // end
       default:
         next_state = IDLE;
     endcase
