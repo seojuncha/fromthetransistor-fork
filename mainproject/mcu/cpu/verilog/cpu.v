@@ -5,25 +5,24 @@ module cpu (
   output [31:0] memory_addr,
   input [31:0] data_from_memory,
   output reg[31:0] data_to_memory,
-  output reg read_from_memory,
-  output reg write_to_memory,
+  output write_to_memory,  // 1: write, 0: read
   input memory_error
 );
-  localparam IDLE = 3'b000, 
-             FETCH = 3'b001, 
-             DECODE = 3'b010, 
-             EXECUTE = 3'b011,
-             WRITE_BACK = 3'b100,
-             DONE = 3'b101;
+  localparam IDLE = 4'b0000, 
+             FETCH1 = 4'b0001, 
+             FETCH2 = 4'b0010, 
+             FETCH3 = 4'b0011, 
+             DECODE1 = 4'b0100, 
+             DECODE2 = 4'b0101, 
+             MEM1 = 4'b0110, 
+             MEM2 = 4'b0111, 
+             MEM3 = 4'b1000, 
+             EXECUTE = 4'b1001,
+             WRITE_BACK = 4'b1010,
+             DONE = 4'b1011;
 
-  // localparam DATA_PROCESSING_REG = 3'b000,
-  //            DATA_PROCESSING_IMM = 3'b001,
-  //            LOAD_STORE_IMM = 3'b010,
-  //            LOAD_STORE_REG = 3'b011,
-  //            BRANCH = 3'b101;
-
-  reg [2:0] state;
-  reg [2:0] next_state;
+  reg [3:0] state;
+  // reg [2:0] next_state;
 
   reg [31:0] instruction_register;
   reg [31:0] address_register, read_data_register, write_data_register;
@@ -31,7 +30,7 @@ module cpu (
   reg [31:0] general_register[0:14];
   reg [31:0] pc;
 
-  assign memory_addr = (state == FETCH) ? pc : address_register;
+  assign memory_addr = address_register;
 
   // decoder interface
   reg decode_enable;
@@ -44,6 +43,7 @@ module cpu (
   wire [4:0] dec_shift_amount;
   wire dec_use_rs;
   wire dec_use_imm32;
+  wire dec_use_register;
   wire [3:0] dec_rs;
   wire [3:0] dec_rotate_imm;
   wire [7:0] dec_imm8;
@@ -51,12 +51,12 @@ module cpu (
   wire dec_is_unsigned_byte;
   wire dec_is_not_postindex;
   wire dec_is_added_offset;
+  wire dec_is_branch;
   wire dec_is_write_back;
   wire [11:0] dec_offset_12;
   wire dec_branch_with_link;
   wire [23:0] dec_signed_immmed_24;
-  wire dec_mem_read;
-  wire dec_mem_write;
+  wire dec_access_memory;
 
   instruction_decoder instruction_decoder(
     .clk(clk),
@@ -70,21 +70,23 @@ module cpu (
     .shift_amount(dec_shift_amount),
     .use_rs(dec_use_rs),
     .use_imm32(dec_use_imm32),
+    .use_register(dec_use_register),
     .rs(dec_rs),
     .rotate_imm(dec_rotate_imm),
     .imm8(dec_imm8),
+    .access_memory(dec_access_memory),
     .is_load(dec_is_load),
     .is_unsigned_byte(dec_is_unsigned_byte),
     .is_not_postindex(dec_is_not_postindex),
     .is_added_offset(dec_is_added_offset),
     .is_write_back(dec_is_write_back),
     .offset_12(dec_offset_12),
+    .is_branch(dec_is_branch),
     .branch_with_link(dec_branch_with_link),
     .signed_immmed_24(dec_signed_immmed_24),
-    .mem_read(dec_mem_read),
-    .mem_write(dec_mem_write),
     .valid(decode_valid)
   );
+  assign write_to_memory = (state < DECODE2) ? 0 : instruction_decoder.mem_write;
 
 
   // barrel shifter
@@ -121,153 +123,177 @@ module cpu (
     .carry_out_flag(carry_flag)
   );
 
-  always @(posedge clk) begin
-    case (state)
-      IDLE: begin
-        integer i;
-        for (i = 0; i < 15; i = i + 1) begin
-          general_register[i] <= 32'd0;
-        end
-
-        pc <= 32'h0000_0000;
-        address_register <= 32'h0000_0000;
-        read_data_register <= 32'd0;
-        write_data_register <= 32'd0;
-
-        read_from_memory <= 1;
-        write_to_memory <= 0;
-      end
-
-      FETCH: begin
-        address_register <= pc + 4;
-        pc <= pc + 4;
-
-        // for convinient, little->big
-        if (little_endian_en)
-          instruction_register <= (data_from_memory[7:0] << 24)
-                                  | (data_from_memory[15:8] << 16)
-                                  | (data_from_memory[23:16] << 8)
-                                  | (data_from_memory[31:24]);
-        else
-          instruction_register <= data_from_memory;
-      end
-
-      DECODE: begin
-
-      end
-
-      EXECUTE: begin
-        if (dec_use_imm32) begin
-          shift_value <= dec_imm8;
-          shift_amt <= dec_rotate_imm;
-        end else begin
-          shift_value <= general_register[dec_rm];
-          shift_amt <= dec_shift_amount;
-        end
-        // reg_read_addr <= dec_rn;
-        // $display("[%0t][CPU][CORE][EXECUTE] instruction: 0x%08x", $realtime, instruction_register);
-        // case (ir[27:25])
-        //   DATA_PROCESSING_REG: begin
-        //     $display("[CPU] DATA_PROCESSING_REG");
-        //     shift_value <= register[dec_rm];
-        //     shift_amt <= dec_shift_amount;
-        //     $display("[CPU] -------------------------------");
-        //   end
-
-        //   DATA_PROCESSING_IMM: begin
-        //     $display("[CPU] DATA_PROCESSING_IMM");
-        //     shift_value <= dec_imm8;
-        //     shift_amt <= dec_rotate_imm;
-        //     $display("[CPU] -------------------------------");
-        //   end
-
-        //   LOAD_STORE_IMM: begin
-        //     $display("[CPU] LOAD_STORE_IMM");
-        //     if (dec_is_added_offset)
-        //       address <= dec_rn + dec_offset_12;
-        //     else
-        //       address <= dec_rn - dec_offset_12;
-
-        //     $display("[CPU] -------------------------------");
-        //   end
-
-        //   LOAD_STORE_REG: begin
-        //     $display("[CPU] LOAD_STORE_REG");
-        //     if (dec_is_added_offset)
-        //       address <= dec_rn + shifter_operand;
-        //     else
-        //       address <= dec_rn - shifter_operand;
-        //     $display("[CPU] -------------------------------");
-        //   end
-
-        //   BRANCH: begin
-        //     $display("[CPU] BRANCH");
-        //     $display("[CPU] -------------------------------");
-        //   end
-        //   default:  $display("[CPU] Unknown instruction type: %x", ir[27:25]);
-        // endcase
-
-        alu_a <= general_register[dec_rn];
-      end
-
-      WRITE_BACK: begin
-        general_register[dec_rd] <= alu_out;
-      end
-
-      DONE: begin
-      end
-    endcase
-  end
-
   always @(posedge clk or negedge rst) begin
-    if (!rst) state <= IDLE;
-    else state <= next_state;
-  end
+    if (!rst) begin
+      state <= IDLE;
+    end else begin
+      case (state)
+        IDLE: begin
+          integer i;
+          for (i = 0; i < 15; i = i + 1) begin
+            general_register[i] <= 32'd0;
+          end
 
-  always @(*) begin
-    decode_enable = 0;
-    execute_enable = 0;
-    // read_from_memory = 0;
-    // write_to_memory = 0;
+          pc <= 32'h0000_0000;
+          address_register <= 32'h0000_0000;
+          read_data_register <= 32'd0;
+          write_data_register <= 32'd0;
+          busy_memory <= 0;
 
-    next_state = state;
-
-    case (state)
-      IDLE: begin
-        if (!memory_error)
-          next_state = FETCH;
-      end
-
-      FETCH: begin
-        if (!memory_error) begin
-          next_state = DECODE;
+          state <= FETCH1;
         end
-      end
 
-      DECODE: begin
-        decode_enable = 1;
-        next_state = EXECUTE;
-      end
+        FETCH1: begin
+          pc <= pc + 4;
+          state <= FETCH2;
+        end
 
-      EXECUTE: begin
-        execute_enable = 1;
-        next_state = WRITE_BACK;
-      end
+        FETCH2: begin
+          read_data_register <= data_from_memory;
+          state <= FETCH3;
+        end
 
-      WRITE_BACK: begin
-        execute_enable = 1;
-        next_state = DONE;
-      end
+        FETCH3: begin
+          // for convinient, little->big
+          if (little_endian_en)
+            instruction_register <= (read_data_register[7:0] << 24)
+                                    | (read_data_register[15:8] << 16)
+                                    | (read_data_register[23:16] << 8)
+                                    | (read_data_register[31:24]);
+          else
+            instruction_register <= read_data_register;
+          decode_enable <= 1;
+          state <= DECODE1;
+        end
 
-      DONE: begin
-        next_state = FETCH;
-      end
+        DECODE1: begin
+          state <= DECODE2;
+        end
 
-      default:
-        next_state = IDLE;
-    endcase
+        DECODE2: begin
+          if (dec_access_memory) begin
+            if (dec_use_register) begin
+              address_register <= general_register[dec_rn] + general_register[dec_rm];
+            end else begin
+              address_register <= general_register[dec_rn] + dec_offset_12;
+            end
+            state <= MEM1;
+          end else begin
+            if (dec_is_branch) begin
+            end else begin
+              if (dec_use_imm32) begin
+                shift_value <= dec_imm8;
+                shift_amt <= dec_rotate_imm;
+              end else begin
+                shift_value <= general_register[dec_rm];
+                shift_amt <= dec_shift_amount;
+              end
+              alu_a <= general_register[dec_rn];
+            end
+            execute_enable <= 1;
+            state <= EXECUTE;
+          end
+        end
+
+        MEM1: begin
+          if (write_to_memory) begin
+            write_data_register <= general_register[dec_rd];
+          end else begin
+            // memory reading..
+          end
+          state <= MEM2;
+        end
+
+        MEM2: begin
+          if (write_to_memory) begin
+            data_to_memory <= write_data_register;
+          end else begin
+            read_data_register <= data_from_memory;
+          end
+          state <= MEM3;
+        end
+
+        MEM3: begin
+          if (write_to_memory) begin
+            // memory writing..
+          end else begin
+            general_register[dec_rd] <= read_data_register;
+          end
+          state <= DONE;
+        end
+
+        EXECUTE: begin
+          state <= WRITE_BACK; 
+        end
+
+        WRITE_BACK: begin
+          general_register[dec_rd] <= alu_out;
+          state <= DONE;
+        end
+
+        DONE: begin
+          state <= FETCH1;
+          execute_enable <= 0;
+          decode_enable <= 0;
+          address_register <= pc;
+        end
+      endcase
+    end
   end
 
+  // always @(posedge clk or negedge rst) begin
+  //   if (!rst) state <= IDLE;
+  //   else state <= next_state;
+  // end
 
+  // always @(*) begin
+  //   decode_enable = 0;
+  //   execute_enable = 0;
+
+  //   next_state = state;
+
+  //   case (state)
+  //     IDLE: begin
+  //       if (!memory_error)
+  //         next_state = FETCH;
+  //     end
+
+  //     FETCH: begin
+  //       if (!memory_error) begin
+  //         next_state = DECODE;
+  //       end
+  //     end
+
+  //     DECODE: begin
+  //       decode_enable = 1;
+  //       next_state = EXECUTE;
+  //     end
+
+  //     EXECUTE: begin
+  //       execute_enable = 1;
+  //       // if ((read_from_memory || write_to_memory) && busy_memory)
+  //       if (dec_access_memory) begin
+  //         if (busy_memory)
+  //           next_state = WRITE_BACK;
+  //         else
+  //           next_state = EXECUTE;
+  //       end else begin
+  //         next_state = WRITE_BACK;
+  //       end
+  //     end
+
+  //     WRITE_BACK: begin
+  //       execute_enable = 1;
+  //       next_state = DONE;
+  //     end
+
+  //     DONE: begin
+  //       next_state = FETCH;
+  //     end
+
+  //     default:
+  //       next_state = IDLE;
+  //   endcase
+  // end
 
 endmodule

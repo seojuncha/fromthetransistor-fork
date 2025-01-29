@@ -1,8 +1,8 @@
 module memory_controller(
   input clk,
   input rst,
-  input cpu_read_mem,
-  input cpu_write_mem,
+  // input cpu_read_mem,
+  input cpu_write_mem, //  read(0)
   input [31:0] addr,
   input [31:0] idata_from_cpu,
   output reg [31:0] odata_to_cpu,
@@ -12,6 +12,8 @@ module memory_controller(
   wire [31:0] bram_odata, sram_odata, flash_odata, peripheral_odata;
   reg [31:0] bram_idata, sram_idata, flash_idata, peripheral_idata;
   wire decode_error, flash_error;
+  wire cpu_read_mem;
+  assign cpu_read_mem = ~cpu_write_mem;
 
   address_decoder addr_dec(
     .addr(addr),

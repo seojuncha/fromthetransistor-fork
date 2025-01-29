@@ -7,8 +7,6 @@ module mcu(
   wire [31:0] data_out_bus;
 
   wire write_data_to_mem;
-  wire read_data_from_mem;
-
   wire mem_error;
  
   cpu cpu_core(
@@ -18,7 +16,6 @@ module mcu(
     .memory_addr(address_bus),
     .data_from_memory(data_in_bus),
     .data_to_memory(data_out_bus),
-    .read_from_memory(read_data_from_mem),
     .write_to_memory(write_data_to_mem),
     .memory_error(mem_error)
   );
@@ -26,7 +23,6 @@ module mcu(
   memory_controller mem_ctrl(
     .clk(clk),
     .rst(rst),
-    .cpu_read_mem(read_data_from_mem),
     .cpu_write_mem(write_data_to_mem),
     .addr(address_bus),
     .idata_from_cpu(data_out_bus),

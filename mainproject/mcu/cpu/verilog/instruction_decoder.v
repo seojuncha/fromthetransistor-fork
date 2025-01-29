@@ -13,9 +13,11 @@ module instruction_decoder (
   output reg use_rs,
   output reg [3:0] rs,
   output reg use_imm32,
+  output reg use_register,
   output reg [3:0] rotate_imm,
   output reg [7:0] imm8,
   // load and store
+  output reg access_memory,
   output reg is_load,
   output reg is_unsigned_byte,
   output reg is_not_postindex,
@@ -23,10 +25,10 @@ module instruction_decoder (
   output reg is_write_back,
   output reg [11:0] offset_12,
   // branch
+  output reg is_branch,
   output reg branch_with_link,
   output reg [23:0] signed_immmed_24,
   // memory access
-  output reg mem_read,
   output reg mem_write,
   // success or not
   output reg valid
@@ -52,6 +54,8 @@ module instruction_decoder (
             shift_amount <= instruction[11:7];
           end
           use_imm32 <= 0;
+          use_register <= 1;
+          access_memory <= 0;
         end
 
         DATA_PROCESSING_IMM: begin
@@ -59,34 +63,45 @@ module instruction_decoder (
           rotate_imm <= instruction[11:8];
           imm8 <= instruction[7:0];
           use_imm32 <= 1;
+          use_register <= 0;
+          access_memory <= 0;
         end
 
         LOAD_STORE_IMM: begin
           $display("[DECODER] LOAD_STORE_IMM");
           offset_12 <= instruction[11:0];
+          use_imm32 <= 0;
+          use_register <= 0;
+          access_memory <= 1;
         end
 
         LOAD_STORE_REG: begin
           $display("[DECODER] LOAD_STORE_REG");
+          // Scaled register offset/index
           if (instruction[11:4] != 8'd0) begin
             shift_amount <= instruction[11:7];
             shift <= instruction[6:5];
+          end else /* Register offset/index */ begin
           end
+          use_imm32 <= 0;
+          use_register <= 1;
+          access_memory <= 1;
         end
 
         BRANCH: begin
           $display("[DECODER] BRANCH");
           branch_with_link <= instruction[24];
           signed_immmed_24 <= instruction[23:0];
-          mem_read <= 1'b0;
           mem_write <= 1'b0;
+          use_imm32 <= 0;
+          use_register <= 0;
+          access_memory <= 0;
         end
       endcase
 
       if (instruction[27:25] == DATA_PROCESSING_REG || instruction[27:25] == DATA_PROCESSING_IMM) begin
         $display("[%0t][CPU][DECODER] is data processing: %b", $realtime, instruction[24:21]);
         opcode <= instruction[24:21];
-        mem_read <= 1'b0;
         mem_write <= 1'b0;
       end
 
@@ -108,10 +123,8 @@ module instruction_decoder (
         is_write_back <= instruction[21];     // W bit
         is_load <= instruction[20];           // L bit
         if (instruction[20]) begin
-          mem_read <= 1;
           mem_write <= 0;
         end else begin
-          mem_read <= 0;
           mem_write <= 1;
         end
       end

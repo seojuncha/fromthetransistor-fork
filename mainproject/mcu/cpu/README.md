@@ -40,15 +40,18 @@ M[4:0] (Mode) : should be zero(user mode)
 ```
 
 ### Pipeline
-Fetch
+Idle
 
-1. Load an instruction from the memory
-2. Increment the program counter(?)
+Fetch
+read_d
 
 Decode
 
-
 Execute
+
+Write-Back
+
+Done
 
 
 ### Interfaces
