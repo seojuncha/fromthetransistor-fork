@@ -18,6 +18,7 @@ Options:
 """
 
 import os, sys, argparse
+from sys import platform
 from pathlib import Path
 
 from as_parser import Parser
@@ -74,8 +75,17 @@ if __name__ == "__main__":
     if (args.verify):
       origin_obj_path = origin_dir / (asmname + ".o")
       origin_bin_path = origin_dir / (asmname + ".bin")
-      os.system(f"arm-none-eabi-as {str(asmpath)} -o {str(origin_obj_path)}")
-      os.system(f"arm-none-eabi-objcopy -O binary {str(origin_obj_path)} {str(origin_bin_path)}")
+      if platform == "linux":
+        print("Verifying in Linux....")
+        os.system(f"arm-none-eabi-as {str(asmpath)} -o {str(origin_obj_path)}")
+        os.system(f"arm-none-eabi-objcopy -O binary {str(origin_obj_path)} {str(origin_bin_path)}")
+      elif platform == "darwin":
+        print("Verifying in MacOS....")
+        os.system(f"clang -target armv4t-none-eabi -c -o {str(origin_obj_path)} {str(asmpath)}")
+        os.system(f"llvm-objcopy --input-target=elf32-littlearm --output-target=binary {str(origin_obj_path)} {str(origin_bin_path)}")
+      else:
+        print("NOT supported OS: ", platform)
+        exit(1)
 
       if compare_binary_files(origin_bin_path, bin_path):
         print("Verified!!")
