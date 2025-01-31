@@ -22,7 +22,6 @@ module cpu (
              DONE = 4'b1011;
 
   reg [3:0] state;
-  // reg [2:0] next_state;
 
   reg [31:0] instruction_register;
   reg [31:0] address_register, read_data_register, write_data_register;
@@ -240,60 +239,5 @@ module cpu (
       endcase
     end
   end
-
-  // always @(posedge clk or negedge rst) begin
-  //   if (!rst) state <= IDLE;
-  //   else state <= next_state;
-  // end
-
-  // always @(*) begin
-  //   decode_enable = 0;
-  //   execute_enable = 0;
-
-  //   next_state = state;
-
-  //   case (state)
-  //     IDLE: begin
-  //       if (!memory_error)
-  //         next_state = FETCH;
-  //     end
-
-  //     FETCH: begin
-  //       if (!memory_error) begin
-  //         next_state = DECODE;
-  //       end
-  //     end
-
-  //     DECODE: begin
-  //       decode_enable = 1;
-  //       next_state = EXECUTE;
-  //     end
-
-  //     EXECUTE: begin
-  //       execute_enable = 1;
-  //       // if ((read_from_memory || write_to_memory) && busy_memory)
-  //       if (dec_access_memory) begin
-  //         if (busy_memory)
-  //           next_state = WRITE_BACK;
-  //         else
-  //           next_state = EXECUTE;
-  //       end else begin
-  //         next_state = WRITE_BACK;
-  //       end
-  //     end
-
-  //     WRITE_BACK: begin
-  //       execute_enable = 1;
-  //       next_state = DONE;
-  //     end
-
-  //     DONE: begin
-  //       next_state = FETCH;
-  //     end
-
-  //     default:
-  //       next_state = IDLE;
-  //   endcase
-  // end
 
 endmodule
