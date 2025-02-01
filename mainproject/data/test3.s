@@ -1,38 +1,27 @@
 .section .text
 .global _start
 
- @ 0x0
 _start:
-  mov r0, #10    @ r0 = 10
-  mov r1, #20    @ r1 = 20
+  mov r0, #5    @ r0 = 5
+  mov r1, #0x00010000   @ r1 = 0x10000 = 65536
+  str r0, [r1]    @ mem[0x10000] = 5
 
-  add r2, r0, r1    @ r2 = 10 + 20 = 30
-  sub r3, r2, #5    @ r3 = 30 + 5 = 35
+  mov r2, #100    @ r2 = 100
+  str r2, [r1, #4]    @ mem[0x10004] = 100
+  b next_step
 
-  mov r4, #0x00010000    @ r4 = 0x10000
-  str r3, [r4]    @ mem[0x10000] <- 35
-  ldr r5, [r4]    @ r5 = 35
+ignored:
+  mov r3, #200
+  str r3, [r1, #8]
 
-  add r5, r5, #7    @ r5 = 42
-  str r5, [r4, #4]    @ mem[0x10004] <- 42
-  ldr r6, [r4, #4]    @ r6 = 42
+next_step:
+  ldr r4, [r1]    @ r4 = 0x10000 = 65536
+  sub r4, r4, #1    @ r4 = 65535
+  str r4, [r1]    @ mem[0x10000] = 65535
 
-  mov r7, #5    @ r7 = 5
+  ldr r5, [r1]    @ r5 = 65535
+  add r6, r5, #1    @ r6 = 65536
+  str r6, [r1, #12]   @ mem[0x1000c] = 65536
 
-@ 0x2c
-loop:
-  sub r7, r7, #1
-  cmp r7, #0
-  b loop_check
-
-@ 0x38
-loop_check:
-  mov r8, r7
-  add r8, r8, #1
-  sub r9, r8, #6
-  b end_loop
-
-@ 0x48
-end_loop:
 _stop:
   b _stop

@@ -87,23 +87,17 @@ class Encoder:
     self.set_bit(1, 27)
     self.set_bit(0, 26)
     self.set_bit(1, 25)
-    if obj.is_link:
-      self.set_bit(1, 24) # no link address now.
+
+    if obj.is_link: self.set_bit(1, 24) # no link address now.
+
     # target address = PC + 8 + (offset * 4)
     # offset = (target address - (PC + 8)) / 4
     # if target address is the address of branch instruction
     # offset = pc - pc - 8 / 4 = -2
     # two's comp of -2 (4-bit) = 0010 -> 1101 -> 1110!
     # 24-bit sign extended : 111...1110 -> 0xfffffe 
-    offset = (obj.target_addr - (obj.addr + 8)) >> 2 & 0xf
-    if offset & 0x8:
-      offset |= 0xfffff0
-    else:
-      offset >>= 20
+    offset = ((obj.target_addr - (obj.addr + 8)) >> 2) & 0xff_ffff
     self.set_bit(offset, 0)
-
-  def memory_encoding(self):
-    pass
 
   def multiply_encoding(self, obj: MultiplyInstObj):
     self.set_bit(0b0000000, 21)
