@@ -53,7 +53,8 @@ if __name__ == "__main__":
   if (args.verify):
     print("Verify option is enabled....")
     origin_dir = Path("gnu_out/")
-    origin_dir.mkdir(parents=True)
+    if not origin_dir.exists():
+      origin_dir.mkdir(parents=True)
 
   p = Parser(debug=args.debug)
   e = Encoder(debug=args.debug)
