@@ -54,8 +54,13 @@ module cpu (
   wire dec_is_write_back;
   wire [11:0] dec_offset_12;
   wire dec_branch_with_link;
-  wire [23:0] dec_signed_immmed_24;
+  wire [23:0] dec_branch_offset;
+  wire [31:0] dec_sign_extended_branch_offset;
   wire dec_access_memory;
+  wire positive_branch_offset;
+
+  assign positive_branch_offset = (dec_branch_offset[23] == 0);
+  assign dec_sign_extended_branch_offset = (positive_branch_offset == 1) ? {8'h00, dec_branch_offset} : {8'hff, dec_branch_offset};
 
   instruction_decoder instruction_decoder(
     .clk(clk),
@@ -82,7 +87,7 @@ module cpu (
     .offset_12(dec_offset_12),
     .is_branch(dec_is_branch),
     .branch_with_link(dec_branch_with_link),
-    .signed_immmed_24(dec_signed_immmed_24),
+    .signed_immmed_24(dec_branch_offset),
     .valid(decode_valid)
   );
   assign write_to_memory = (state < DECODE2) ? 0 : instruction_decoder.mem_write;
@@ -137,7 +142,6 @@ module cpu (
           address_register <= 32'h0000_0000;
           read_data_register <= 32'd0;
           write_data_register <= 32'd0;
-          busy_memory <= 0;
 
           state <= FETCH1;
         end
@@ -179,6 +183,8 @@ module cpu (
             state <= MEM1;
           end else begin
             if (dec_is_branch) begin
+              pc <= pc + 4 + (dec_sign_extended_branch_offset << 2);
+              state <= DONE;
             end else begin
               if (dec_use_imm32) begin
                 shift_value <= dec_imm8;
@@ -188,9 +194,9 @@ module cpu (
                 shift_amt <= dec_shift_amount;
               end
               alu_a <= general_register[dec_rn];
+              execute_enable <= 1;
+              state <= EXECUTE;
             end
-            execute_enable <= 1;
-            state <= EXECUTE;
           end
         end
 

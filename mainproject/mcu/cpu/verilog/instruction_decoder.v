@@ -41,11 +41,9 @@ module instruction_decoder (
 
   always @(posedge clk) begin
     if (enable) begin
-      $display("[%0t] instruction: 0x%08h", $realtime, instruction);
       valid <= 1; // Focibly 1 now.
       case (instruction[27:25])
         DATA_PROCESSING_REG: begin
-          $display("[%0t][CPU][DECODER] DATA_PROCESSING_REG", $realtime);
           shift <= instruction[6:5];
           if (instruction[20]) begin
             use_rs <= instruction[20];
@@ -59,7 +57,6 @@ module instruction_decoder (
         end
 
         DATA_PROCESSING_IMM: begin
-          $display("[%0t][CPU][DECODER] DATA_PROCESSING_IMM", $realtime);
           rotate_imm <= instruction[11:8];
           imm8 <= instruction[7:0];
           use_imm32 <= 1;
@@ -68,7 +65,6 @@ module instruction_decoder (
         end
 
         LOAD_STORE_IMM: begin
-          $display("[DECODER] LOAD_STORE_IMM");
           offset_12 <= instruction[11:0];
           use_imm32 <= 0;
           use_register <= 0;
@@ -76,7 +72,6 @@ module instruction_decoder (
         end
 
         LOAD_STORE_REG: begin
-          $display("[DECODER] LOAD_STORE_REG");
           // Scaled register offset/index
           if (instruction[11:4] != 8'd0) begin
             shift_amount <= instruction[11:7];
@@ -89,9 +84,9 @@ module instruction_decoder (
         end
 
         BRANCH: begin
-          $display("[DECODER] BRANCH");
           branch_with_link <= instruction[24];
           signed_immmed_24 <= instruction[23:0];
+          is_branch <= 1'b1;
           mem_write <= 1'b0;
           use_imm32 <= 0;
           use_register <= 0;
@@ -100,19 +95,17 @@ module instruction_decoder (
       endcase
 
       if (instruction[27:25] == DATA_PROCESSING_REG || instruction[27:25] == DATA_PROCESSING_IMM) begin
-        $display("[%0t][CPU][DECODER] is data processing: %b", $realtime, instruction[24:21]);
         opcode <= instruction[24:21];
         mem_write <= 1'b0;
       end
 
       if (instruction[27:25] != BRANCH) begin
-        $display("[DECODER] not branch");
         rn <= instruction[19:16];
         rd <= instruction[15:12];
+        is_branch <= 1'b0;
       end
 
       if (instruction[27:25] == DATA_PROCESSING_REG || instruction[27:25] == LOAD_STORE_REG) begin
-        $display("[%0t][CPU][DECODER] use register", $realtime);
         rm <= instruction[3:0];
       end
 

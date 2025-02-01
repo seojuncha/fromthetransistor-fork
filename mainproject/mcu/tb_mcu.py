@@ -41,7 +41,7 @@ async def tb_mcu(dut):
   cpu_core = dut.cpu_core
   mem_ctrl = dut.mem_ctrl
 
-  for i in range(100):
+  for i in range(160):
     # dut._log.info(f"{state(cpu_core)} instruction : {cpu_core.instruction_register.value.integer:08x}")
     # dut._log.info(f"{state(cpu_core)} internal registers")
     # dut._log.info(f"addr [0x{cpu_core.address_register.value.integer:08x}] read [0x{cpu_core.read_data_register.value.integer:08x}] write [0x{cpu_core.write_data_register.value.integer:08x}]")
@@ -53,5 +53,6 @@ async def tb_mcu(dut):
     # if cpu_core.state.value.integer >= 0b010:
     #   dut._log.info(f"rd {cpu_core.dec_rd.value}  rn {cpu_core.dec_rn.value}")
     await RisingEdge(dut.clk)
-    print_register(cpu_core)
+    if cpu_core.state.value == 0b101:
+      print_register(cpu_core)
     # await Timer(1, units="ns")

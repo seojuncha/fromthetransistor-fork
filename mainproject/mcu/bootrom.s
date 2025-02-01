@@ -2,14 +2,26 @@
 .global _start
 
 _start:
-  mov r0, #0x00011000   @ r0 = 0x0001_1000
-  mov r1, #42           @ r1 = 42
-  str r1, [r0]          @ memory[0x0001_1000] <= 42
+  mov r0, #5    @ r0 = 5
+  mov r1, #0x00010000   @ r1 = 0x10000 = 65536
+  str r0, [r1]    @ mem[0x10000] = 5
 
-  ldr r2, [r0]          @ r2 <= memory[0x0001_1000] = 42
-  add r2, r2, #10       @ r2 = 52
-  str r2, [r0, #4]      @ memory[0x0001_1000+4] = memory[0x0001_1004] <= 52
+  mov r2, #100    @ r2 = 100
+  str r2, [r1, #4]    @ mem[0x10004] = 100
+  b next_step
 
-  ldr r3, [r0, #4]      @ r3 = 52
-  mov r7, #1            @ r7 = 1
-  mov r0, #0            @ r0 = 0
+ignored:
+  mov r3, #200
+  str r3, [r1, #8]
+
+next_step:
+  ldr r4, [r1]    @ r4 = mem[0x10000] = 5
+  sub r4, r4, #1    @ r4 = 4
+  str r4, [r1]    @ mem[0x10000] = 4
+
+  ldr r5, [r1]    @ r5 = 4
+  add r6, r5, #1    @ r6 = 5
+  str r6, [r1, #12]   @ mem[0x1000c] = 5
+
+_stop:
+  b _stop
