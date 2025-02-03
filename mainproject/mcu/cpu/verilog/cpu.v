@@ -62,7 +62,7 @@ module cpu (
   assign positive_branch_offset = (dec_branch_offset[23] == 0);
   assign dec_sign_extended_branch_offset = (positive_branch_offset == 1) ? {8'h00, dec_branch_offset} : {8'hff, dec_branch_offset};
 
-  instruction_decoder instruction_decoder(
+  instruction_decoder instruction_decoder (
     .clk(clk),
     .enable(decode_enable),
     .instruction(instruction_register),
@@ -92,13 +92,12 @@ module cpu (
   );
   assign write_to_memory = (state < DECODE2) ? 0 : instruction_decoder.mem_write;
 
-
   // barrel shifter
   reg [31:0] shift_value;
   reg [4:0] shift_amt;
   wire [31:0] shifter_operand;
 
-  barrel_shifter barrel_shifter_inst(
+  barrel_shifter barrel_shifter (
     .shift_in(shift_value),
     .shift_type(dec_shift),
     .shift_imm(shift_amt),
@@ -115,7 +114,7 @@ module cpu (
   reg [31:0] alu_a;     // operand 1. operand 2 from shifter
   wire [31:0] alu_out;  // result
 
-  alu alu_inst (
+  alu alu (
     .enable(execute_enable),
     .opcode(dec_opcode),
     .operand1(alu_a),

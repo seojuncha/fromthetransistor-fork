@@ -30,10 +30,8 @@ module barrel_shifter (
       end else begin
         shift_carry_out = shifter_operand[31];
       end
-      $display("[%0t][SHIFTER] is imm 32: %b", $realtime, shifter_operand);
     end else begin
       // Directly from register value
-      $display("[%0t][SHIFTER] is from register", $realtime);
       if (shift_type == 2'd0 && shift_imm == 5'd0 && is_imm_32 == 1'b0) begin
         shifter_operand = shift_in;
         shift_carry_out = carry_in;

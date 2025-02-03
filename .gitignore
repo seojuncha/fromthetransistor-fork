@@ -10,3 +10,4 @@ gnu_out
 *.elf
 *.log
 .vscode
+.DS_Store
