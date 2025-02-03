@@ -25,7 +25,6 @@ module cpu (
 
   reg [31:0] instruction_register;
   reg [31:0] address_register, read_data_register, write_data_register;
-  reg [31:0] test_read_register;
 
   reg [31:0] general_register[0:14];
   reg [31:0] pc;
@@ -231,7 +230,6 @@ module cpu (
   end
 
   always @(data_from_memory) begin
-    // test_read_register = data_from_memory;
     read_data_register = data_from_memory;
     if (state == DECODE1) begin
       if (little_endian_en)
