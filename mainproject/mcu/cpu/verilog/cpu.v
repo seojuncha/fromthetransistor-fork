@@ -25,10 +25,12 @@ module cpu (
 
   reg [31:0] instruction_register;
   reg [31:0] address_register, read_data_register, write_data_register;
+  reg [31:0] test_read_register;
 
   reg [31:0] general_register[0:14];
   reg [31:0] pc;
 
+  // assign memory_addr = (state == FETCH1) ? pc : address_register;
   assign memory_addr = address_register;
 
   // decoder interface
@@ -147,23 +149,6 @@ module cpu (
 
         FETCH1: begin
           pc <= pc + 4;
-          state <= FETCH2;
-        end
-
-        FETCH2: begin
-          read_data_register <= data_from_memory;
-          state <= FETCH3;
-        end
-
-        FETCH3: begin
-          // for convinient, little->big
-          if (little_endian_en)
-            instruction_register <= (read_data_register[7:0] << 24)
-                                    | (read_data_register[15:8] << 16)
-                                    | (read_data_register[23:16] << 8)
-                                    | (read_data_register[31:24]);
-          else
-            instruction_register <= read_data_register;
           decode_enable <= 1;
           state <= DECODE1;
         end
@@ -242,6 +227,20 @@ module cpu (
           address_register <= pc;
         end
       endcase
+    end
+  end
+
+  always @(data_from_memory) begin
+    // test_read_register = data_from_memory;
+    read_data_register = data_from_memory;
+    if (state == DECODE1) begin
+      if (little_endian_en)
+            instruction_register = (data_from_memory[7:0] << 24)
+                                    | (data_from_memory[15:8] << 16)
+                                    | (data_from_memory[23:16] << 8)
+                                    | (data_from_memory[31:24]);
+      else
+        instruction_register = data_from_memory;
     end
   end
 
