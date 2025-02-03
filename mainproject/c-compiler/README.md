@@ -10,7 +10,12 @@
 - Open Source C Compiler
   - [chibicc](https://github.com/rui314/chibicc)
   - [ucc](https://github.com/sheisc/ucc162.3)
-- Books
-  - 
-- Papers
-  - http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf
+- Books & Papers
+  - Compiler Design
+    - http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf
+    - [Crafting Interpreters](https://craftinginterpreters.com/contents.html)
+    - Dragon Book
+  - Lisp
+    - SICP
+    - [Practical Common Lisp](https://gigamonkeys.com/book/)
+    - [Lisp in Small Pars](http://lisp.plasticki.com/)
