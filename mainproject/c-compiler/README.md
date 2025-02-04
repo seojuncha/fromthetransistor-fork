@@ -1,9 +1,13 @@
 # C Compiler
 
 # Which Parts?
+
 ## Lexer (Lexical Analyzer)
+
 ## Parser (Syntax Analyzer)
+
 ## Semantic Analyzer (Type Checking, Static Analysis)
+
 ## Code Generator (Assembly Generator)
 
 # References

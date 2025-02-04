@@ -51,7 +51,7 @@ module alu #(
   always @(*) begin
     if (enable) begin
       alu_out = 0;
-      $display("[ALU] a: %09x, b: %09x", alu_a, alu_b);
+      // $display("[ALU] a: %09x, b: %09x", alu_a, alu_b);
       case (opcode)
         OPCODE_AND: alu_out = alu_a & alu_b;
         OPCODE_EOR: alu_out = alu_a ^ alu_b;

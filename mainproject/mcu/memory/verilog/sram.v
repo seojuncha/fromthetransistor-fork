@@ -9,12 +9,6 @@ module sram (
 );
   reg [31:0] memory [0:16383];
 
-  // test fetch process only
-  // explicitely copy a binary file into a current working directory.
-  // initial begin
-  //   $readmemb("little-mov.bin", memory);
-  // end
-
   always @(posedge clk or negedge rst) begin
     if (!rst) begin
       integer i;
