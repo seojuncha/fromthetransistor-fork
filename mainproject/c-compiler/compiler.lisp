@@ -1,10 +1,32 @@
-#!/usr/bin/env clisp
+#!/usr/bin/sbcl --script
 
-(format t "Start c compiler")
+(load "package.lisp") 
+(load "scanner.lisp")
+(load "parser.lisp")
+(load "codegen.lisp")
 
-;;; 1. read a C file
-;;; 2. tokenize
+(in-package :c-compiler)
 
+(defparameter *c-file-path* ())
+(defun parse-arguments (args)
+  (format t "command line arguments: ~a~%" args)
+  (format t "length: ~d~%" (length args))
+  (loop until (endp args) do
+    (format t "here~%")
+    (push (pop args) *c-file-path*)))
 
-; (with-open-file (stream "examples/only-main.c" :direction :input)
-;   form*)
+(defun run ()
+  (parse-arguments (cdr sb-ext:*posix-argv*))
+  (when (= 0 (length *c-file-path*))
+    (format t "no file~%")
+    (sb-ext:quit :unix-status 1))
+  (loop until (endp *c-file-path*) do
+    ; read line-by-line
+    (pop *c-file-path*)
+    ; scanning input: source line
+    ; scanning output: list of tokens
+    (scanning "return 32;")
+    (parsing)
+    (codegen)))
+
+(run)
