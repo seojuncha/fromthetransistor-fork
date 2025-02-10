@@ -21,12 +21,12 @@
     (format t "no file~%")
     (sb-ext:quit :unix-status 1))
   (loop until (endp *c-file-path*) do
-    ; read line-by-line
-    (pop *c-file-path*)
-    ; scanning input: source line
-    ; scanning output: list of tokens
-    (scanning "return 32;")
-    (parsing)
-    (codegen)))
+    (let ((parse-file (pop *c-file-path*)))
+      (with-open-file (instream parse-file)
+        (let ((contents (make-string (file-length instream))))
+          (read-sequence contents instream)
+          (format t "READ~%~a~%" contents)
+          (let ((tokens (scanning contents)))
+            (format t "tokens: ~a~%" tokens)))))))
 
 (run)
