@@ -68,10 +68,10 @@ Chekcs variable scope, type error, make a symbol table.
 
 
 # References
-- Open Source C Compiler
+- **Open Source C Compiler**
   - [chibicc](https://github.com/rui314/chibicc)
   - [ucc](https://github.com/sheisc/ucc162.3)
-- Books & Papers
+- **Books & Papers**
   - Compiler Design
     - http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf
     - [Crafting Interpreters](https://craftinginterpreters.com/contents.html)
@@ -79,4 +79,5 @@ Chekcs variable scope, type error, make a symbol table.
   - Lisp
     - SICP
     - [Practical Common Lisp](https://gigamonkeys.com/book/)
+    - [Common Lisp the language, 2nd Edition](https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/clm.html)
     - [Lisp in Small Pars](http://lisp.plasticki.com/)
