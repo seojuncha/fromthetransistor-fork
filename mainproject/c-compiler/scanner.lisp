@@ -8,7 +8,8 @@
 (defconstant +token-1-close-curly-bracket+ #\})
 (defconstant +token-1-equal+ #\=)
 (defconstant +token-1-semicolon+ #\;)
-(defconstant +token-newline+ #\Newline)
+(defconstant +token-newline+ #\newline)
+(defconstant +token-space+ #\space)
 
 (defparameter *token-type* '(:open-paran
                              :close-paran
@@ -26,23 +27,42 @@
 
 (defparameter *tokens* '())
 
+(defun identifier (source start offset)
+  (loop while (or (digit-char-p (char source (+ start offset))) (alpha-char-p (char source (+ start offset)))) do
+                          (incf offset))
+  (format t "offset: ~d~%" offset)
+
+  (let ((substring nil))
+    (setq substring (subseq source start (+ start offset)))
+    (format t "substring: ~a~%" substring)
+    ; compare wheter it is keyword.
+  ) offset)
+
 
 (defun scanning (source)
   (format t ">>> start scanning.... ~d characters.~%" (length source))
-  (let ((start 0) (current 0) (line 1) c)
-    (loop while (< current (length source)) do
-      (setq c (char source current))
-      (format t "[~d] ~a~%" current c)
+  (loop with line = 1 and index = 0
+        while (< index (length source)) do
+    (let ((start index)
+          (offset 0)
+          (chracter nil))
+      (setq chracter (char source index))
+      (incf index)
+      (format t "[line:~d][index:~d] ~a~%" line index chracter)
+
       (cond 
-        ((char= c +token-1-open-paran+)
+        ((char= chracter +token-1-open-paran+)
           (push (make-token :token-type :open-paran :line line) *tokens*))
-        ((char= c +token-1-close-paran+)
+        ((char= chracter +token-1-close-paran+)
           (push (make-token :token-type :close-paran :line line) *tokens*))
-        ((char= c +token-newline+)
+        ((char= chracter +token-newline+)
           (incf line))
-        (t (cond 
-              ((digit-char-p c) (format t "numeric~%") )
-              ((alpha-char-p c) (format t "alphabet~%")))))
-      (incf current)))
+        (t (cond
+              ((digit-char-p chracter) 
+                (format t "numeric~%"))
+              ((alpha-char-p chracter)
+                (format t "alphabet~%")
+                (incf index (identifier source start offset)))))
+          )))
   (push (make-token :token-type :eof) *tokens*)
   *tokens*)
