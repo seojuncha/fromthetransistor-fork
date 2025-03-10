@@ -1,5 +1,3 @@
-#!/usr/bin/sbcl --script
-
 (load "package.lisp") 
 (load "scanner.lisp")
 (load "parser.lisp")
@@ -10,9 +8,7 @@
 (defparameter *c-file-path* ())
 (defun parse-arguments (args)
   (format t "command line arguments: ~a~%" args)
-  (format t "length: ~d~%" (length args))
   (loop until (endp args) do
-    (format t "here~%")
     (push (pop args) *c-file-path*)))
 
 (defun run ()
@@ -25,7 +21,7 @@
       (with-open-file (instream parse-file)
         (let ((contents (make-string (file-length instream))))
           (read-sequence contents instream)
-          (format t "READ~%~a~%" contents)
+          (format t "read source...~%~a~%" contents)
           (let ((tokens (scanning contents)))
             (format t "tokens: ~a~%" tokens)))))))
 
