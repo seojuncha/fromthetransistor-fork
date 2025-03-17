@@ -66,16 +66,19 @@ Chekcs variable scope, type error, make a symbol table.
 - Pascal and C
 
 
-
 # References
 - **Open Source C Compiler**
   - [chibicc](https://github.com/rui314/chibicc)
   - [ucc](https://github.com/sheisc/ucc162.3)
 - **Books & Papers**
+  - C Standard
+    - [ANSI C](https://en.wikipedia.org/wiki/ANSI_C)
+      - [C99](https://www.dii.uchile.cl/~daespino/files/Iso_C_1999_definition.pdf)
   - Compiler Design
-    - http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf
+    - [An Incremental Approach to Compiler Construction](http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf)
     - [Crafting Interpreters](https://craftinginterpreters.com/contents.html)
-    - Dragon Book
+    - Compilers - Principles,Techniques, and Tools(Dragon Book)
+    - [ANSI C Yacc grammer](https://www.quut.com/c/ANSI-C-grammar-y.html)
   - Lisp
     - SICP
     - [Practical Common Lisp](https://gigamonkeys.com/book/)
