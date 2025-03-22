@@ -21,6 +21,7 @@
                              :token-plus      ; +
                              :token-slash     ; /
                              :token-star      ; *
+                             :token-bang      ; !
                              :token-mod       ; %
                              :token-semicolon
 
