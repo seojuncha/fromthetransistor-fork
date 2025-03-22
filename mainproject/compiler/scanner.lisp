@@ -77,6 +77,7 @@
                              :token-union
                              :token-typedef
                              :token-void
+                             :token-inline
 
                              ; eof
                              :token-eof))
@@ -124,6 +125,7 @@
 (setf (gethash "union" *keywords*) :token-union)
 (setf (gethash "typedef" *keywords*) :token-typedef)
 (setf (gethash "void" *keywords*) :token-void)
+(setf (gethash "inline" *keywords*) :token-inline)
 
 (defparameter *tokens* '())
 
@@ -166,7 +168,7 @@
               (t (format t "unknown: ~s~%" character) (incf index))))
           )))
   (push (make-token :token-type :eof) *tokens*)
-  *tokens*)
+  (reverse *tokens*))
 
 (defun digit-number (source start offset line)
   (loop while (or (digit-char-p (char source (+ start offset)))) do

@@ -1,8 +1,14 @@
 (load "package.lisp") 
+(load "scanner.lisp")
 (in-package :c-compiler)
 
-;;;; Utils
-(defun next-token ())
+(defun parsing (tokens)
+  (format t ">>> start parsing....~%")
+  (parse-translation-unit tokens))
+
+;;;; Utility Functions
+(defun next-token (tokens)
+  (car tokens))
 
 (defun expect-token (tokens expect-token-type))
 
@@ -10,30 +16,46 @@
 
 ;; translation-unit: 
 ;;   external-declaration
-;;   translation-unit external declaration
-(defun parse-translation-unit (tokens))
+;;   translation-unit external-declaration
+(defun parse-translation-unit (tokens)
+  (format t "check first token ~a~%" (car tokens))
+  (format t "check token type(int) = ~a~%" (eq (token-token-type (car tokens)) :token-int))
+  (format t "check token type(short) = ~a~%" (eq (token-token-type (car tokens)) :token-short))
+  (parse-external-declaration tokens))
 
 ;; external-declaration:
 ;;  function-definition
 ;;  declaration
-(defun parse-external-declaratino (tokens))
+(defun parse-external-declaration (tokens))
 
 ;; function-definition:
 ;;   declaration-specifiers declarator decaration-list_opt compount-statement
 (defun parse-function-definition (tokens))
 
 ;; declaration:
-;;   declaration-specifiers init-declarator-list_opt ";"
+;;   declaration-specifiers init-declarator-list* ";"
 (defun parse-declaration (tokens))
 
 
 ;; declaration-specifiers:
-;;   storage-class-specifier declaration-specifiers_opt
-;;   type-specifier declaration-specifiers_opt
-;;   type-qualifier declaration-specifiers_opt
-;;   function-specifier declaration-specifiers_opt
+;;   storage-class-specifier declaration-specifiers*
+;;   type-specifier declaration-specifiers*
+;;   type-qualifier declaration-specifiers*
+;;   function-specifier declaration-specifiers*
 (defun parse-declaration-specifiers (tokens))
 
+
+(defun is-storage-class-specifier (token)
+  (member token '(:token-typedef :token-extern :token-static :token-auto :token-register)))
+
+(defun is-type-specifier? (token)
+  (member token '(:token-void :token-int :token-char)))
+
+(defun is-type-qualifier? (token)
+  (member token '(:token-const :token-volatile)))
+
+(defun is-function-specifier? (token)
+  (eq token :token-inline))
 
 ;; declarator:
 ;;    pointer_opt direct-declarator
@@ -84,11 +106,12 @@
 ;;    iteration-statement
 ;;    jump-statement
 
-;; jum-statement:
+;; jump-statement:
 ;;    "goto" identifier ";"
 ;;    "continue" ";"
 ;;    "break" ";"
 ;;    "return" expression* ";"
+(defun parse-jump-statement (tokens))
 
 
 ;; expression:
@@ -152,6 +175,3 @@
 
 
 
-(defun parsing (tokens)
-  (format t "start parsing....~%")
-  (parse-translation-unit tokens))

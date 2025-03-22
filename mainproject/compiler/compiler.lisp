@@ -23,6 +23,7 @@
           (read-sequence contents instream)
           (format t "read source...~%~a~%" contents)
           (let ((tokens (scanning contents)))
-            (format t "tokens: ~a~%" tokens)))))))
+            (format t "tokens: ~a~%" tokens)
+            (parsing tokens)))))))
 
 (run)
