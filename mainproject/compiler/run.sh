@@ -1,3 +1,3 @@
 #!/bin/sh
 
-sbcl --script compiler.lisp examples/only-main.c
+sbcl --script compiler.lisp examples/return-only.c

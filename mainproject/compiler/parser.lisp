@@ -4,15 +4,18 @@
 
 (defun parsing (tokens)
   (format t ">>> start parsing....~%")
+  ; entry point of parsing
+  ; The final ast would be returned.
   (parse-translation-unit tokens))
 
-;;;; Utility Functions
-(defun next-token (tokens)
-  (car tokens))
 
-(defun expect-token (tokens expect-token-type))
+;;;; C Syntax 
+;;;; Based on ISO/IEC 9899:1999, Annex A Language syntax summary
 
-;;;; C Syntax
+(defstruct decl-specifier
+  specifier
+  qualifier
+  storage-class)
 
 ;; translation-unit: 
 ;;   external-declaration
@@ -26,11 +29,18 @@
 ;; external-declaration:
 ;;  function-definition
 ;;  declaration
-(defun parse-external-declaration (tokens))
+(defun parse-external-declaration (tokens)
+  ; start with <declaration-specifiers> in both of <function-definition> and <declaration>
+  (parse-function-definition tokens))
 
 ;; function-definition:
-;;   declaration-specifiers declarator decaration-list_opt compount-statement
-(defun parse-function-definition (tokens))
+;;   declaration-specifiers declarator decaration-list* compount-statement
+(defun parse-function-definition (tokens)
+  (multiple-value-bind (declspec rest-tokens) (parse-declaration-specifiers tokens)
+    (format t "[DEBUG] declspec: ~a~%" declspec)
+    (format t "[DEBUG] rest: ~a~%" rest-tokens)
+    (multiple-value-bind (tok rest-tokens-2) (parse-declarator rest-tokens)
+      (parse-compound-statement rest-tokens-2))))
 
 ;; declaration:
 ;;   declaration-specifiers init-declarator-list* ";"
@@ -38,28 +48,40 @@
 
 
 ;; declaration-specifiers:
-;;   storage-class-specifier declaration-specifiers*
-;;   type-specifier declaration-specifiers*
-;;   type-qualifier declaration-specifiers*
-;;   function-specifier declaration-specifiers*
-(defun parse-declaration-specifiers (tokens))
+;;   storage-class-specifier declaration-specifiers?
+;;   type-specifier declaration-specifiers?
+;;   type-qualifier declaration-specifiers?
+;;   function-specifier declaration-specifiers?
+(defun parse-declaration-specifiers (tokens)
+  (let ((specifier nil)
+        (qualifier nil)
+        (storage-class nil)
+        (rest tokens))
+    (loop while (car rest) for tok = (token-token-type (car rest)) do
+      (cond
+        ((storage-class-specifier? tok) (setf storage-class tok) (setf rest (cdr rest)))
+        ((type-specifier? tok) (setf specifier tok) (setf rest (cdr rest)))
+        ((type-qualifier? tok) (setf qualifier tok) (setf rest (cdr rest)))
+        (t (return))))
+    (values (make-decl-specifier :specifier specifier :qualifier qualifier :storage-class storage-class) rest)))
 
+(defun storage-class-specifier? (token-type)
+  (member token-type '(:token-typedef :token-extern :token-static :token-auto :token-register)))
 
-(defun is-storage-class-specifier (token)
-  (member token '(:token-typedef :token-extern :token-static :token-auto :token-register)))
+(defun type-specifier? (token-type)
+  (member token-type '(:token-void :token-int :token-char)))
 
-(defun is-type-specifier? (token)
-  (member token '(:token-void :token-int :token-char)))
+(defun type-qualifier? (token-type)
+  (member token-type '(:token-const :token-volatile)))
 
-(defun is-type-qualifier? (token)
-  (member token '(:token-const :token-volatile)))
-
-(defun is-function-specifier? (token)
-  (eq token :token-inline))
+(defun function-specifier? (token-type)
+  (eq token-type :token-inline))
 
 ;; declarator:
-;;    pointer_opt direct-declarator
-(defun parse-declarator (tokens))
+;;    pointer* direct-declarator
+(defun parse-declarator (tokens)
+  ; skip pointer now!
+  (parse-direct-declarator tokens))
 
 
 ;; direct-declarator:
@@ -68,7 +90,13 @@
 ;;    direct-declarator "(" parameter-type-list ")"
 ;;    direct-declarator "(" identifier-list_opt ")"
 ;;    ....
-(defun parse-direct-declarator (tokens))
+(defun parse-direct-declarator (tokens)
+  (multiple-value-bind (tok rest-tokens) (expect-token tokens :token-identifier)
+    (format t "[DEBUG] tok: ~a~%" tok)
+    (format t "[DEBUG] rest: ~a~%" rest-tokens)
+    (if tok
+      (values (list 'ast-identifier :name (token-lexeme tok)) rest-tokens)
+      (format t "[ERROR] is not idenfier~%"))))
 
 
 ;; parameter-type-list:
@@ -87,7 +115,8 @@
 
 ;; compound-statement:
 ;;    "{" block-item-list*"}"
-(defun parse-compound-statement (tokens))
+(defun parse-compound-statement (tokens)
+  ())
 
 
 ;; block-item-list
@@ -111,7 +140,10 @@
 ;;    "continue" ";"
 ;;    "break" ";"
 ;;    "return" expression* ";"
-(defun parse-jump-statement (tokens))
+(defun parse-jump-statement (tokens)
+  (let ((rest-token (expect-token tokens :token-return)))
+    (let ((expr (parse-expression rest-token)))
+      (expect-token rest-token :token-semicolon))))
 
 
 ;; expression:
@@ -146,7 +178,15 @@
 ;;    constant
 ;;    string-literal
 ;;    "(" expression ")"
-(defun parse-primary-expression (tokens))
+(defun parse-primary-expression (tokens)
+  (let ((tok (car tokens)))
+    (cond
+      ((eq (token-token-type tok) :token-identifier)
+       (list 'ast-identifier (token-lexeme tok)))
+      ((eq (token-token-type tok) :token-number)
+       (list 'ast-number (token-lexeme tok)))
+      (t
+       (format t "Invalid token~%")))))
 
 
 ;; identifier:
@@ -171,7 +211,20 @@
 ;;    floating-constant
 ;;    enumeration-constant
 ;;    character-constant
-(defun parse-constant (tokens))
+; (defun parse-constant (tokens)
+;   ; NOTE: only deal with integer now.
+;   (list 'ast-int-const  ))
 
 
+;;;; Utility Functions
+(defun next-token (tokens)
+  (token-token-type (car tokens)))
 
+;;; This function returns the rest of tokens
+;;; if the first token is matched with the expected token type.
+;;; Q. What if the type is not matched? How can I stop parsing?
+(defun expect-token (tokens expect-token-type)
+  (let ((tok (car tokens)))
+    (if (eq (token-token-type tok) expect-token-type)
+      (values tok (cdr tokens))
+      (format t "[ERROR] Unexpected token: ~a~%" tok))))
