@@ -63,6 +63,7 @@
     (multiple-value-bind (ast-attr-function-name ast-attr-function-param tok-rest-2) (parse-declarator tok-rest-1)
       (format t "[DEBUG] function name: ~a~%" ast-attr-function-name)
       (format t "[DEBUG] function param: ~a~%" ast-attr-function-param)
+      (format t "[DEBUG] token rest: ~a~%" tok-rest-2)
       (parse-compound-statement tok-rest-2))))
 
 ;; declaration-list
@@ -170,7 +171,6 @@
       (values (list '()) tok-rest-1)  ; return empty parameter list
       (parse-declarator tok-rest-1))))
 
-
 ;; declaration:
 ;;    declaration-specifiers init-declarator-list* ";"
 (defun parse-declaration (tokens))
@@ -193,21 +193,31 @@
 ;;    selection-statement
 ;;    iteration-statement
 ;;    jump-statement
-(defun parse-statement (tokens))
+(defun parse-statement (tokens)
+  (cond
+    ((jump-statement? (token-type (car tokens)))
+     (parse-jump-statement tokens))
+    (t
+     (format t "[ERROR] Not supported statement~%"))))
 
-;; compound-statement:
-;;    "{" block-item-list*"}"
-(defun parse-compound-statement (tokens))
+;; <CFG> compound-statement:
+;;    "{" block-item-list* "}"
+(defun parse-compound-statement (tokens)
+  (multiple-value-bind (tok-dummy-1 tok-rest) (expect-token tokens :token-open-brace)
+    (format t "[DEBUG] token rest: ~a~%" tok-rest)
+    (parse-block-item-list tok-rest)))
 
-;; block-item-list
+;; <CFG> block-item-list
 ;;    block-item
 ;;    block-item-list block-item 
-(defun parse-block-item-list (tokens))
+(defun parse-block-item-list (tokens)
+  (parse-block-item tokens))
 
-;; block-item:
+;; <CFG> block-item:
 ;;    declaration
 ;;    statement
-(defun parse-block-item (tokens))
+(defun parse-block-item (tokens)
+  (parse-statement tokens))
 
 ;; jump-statement:
 ;;    "goto" identifier ";"
@@ -215,10 +225,24 @@
 ;;    "break" ";"
 ;;    "return" expression* ";"
 (defun parse-jump-statement (tokens)
-  (let ((rest-token (expect-token tokens :token-return)))
-    (let ((expr (parse-expression rest-token)))
-      (expect-token rest-token :token-semicolon))))
+  ; NOTE: now support only return.
+  (let ((tok-type (token-type (car tokens))))
+    (cond
+      ((eq tok-type :token-return)
+        (multiple-value-bind (tok tok-rest) (expect-token tokens :token-return)
+        (format t "[DEBUG] token rest: ~a~%" tok-rest)
+        (parse-expression tok-rest)))
+      ((eq tok-type :token-goto))
+      ((or (eq (tok-type :token-break) (eq tok-type :token-continue))))
+      (t
+        (format t "[ERROR] Not jump statement~%")))))
 
+(defun jump-statement? (tok-type)
+  (or
+    (eq tok-type :token-return)
+    (eq tok-type :token-goto)
+    (eq tok-type :token-continue)
+    (eq tok-type :token-break)))
 
 ;; expression:
 ;;    assignment-expression

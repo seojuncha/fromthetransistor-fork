@@ -4,8 +4,10 @@
 
 (defconstant +token-open-paran+ #\()
 (defconstant +token-close-paran+ #\))
-(defconstant +token-open-curly-bracket+ #\{)
-(defconstant +token-close-curly-bracket+ #\})
+(defconstant +token-open-brace+ #\{)
+(defconstant +token-close-brace+ #\})
+(defconstant +token-open-bracket+ #\[)
+(defconstant +token-close-bracket+ #\])
 (defconstant +token-equal+ #\=)
 (defconstant +token-semicolon+ #\;)
 (defconstant +token-newline+ #\newline)
@@ -13,8 +15,10 @@
 
 (defparameter *token-type* '(:token-open-paran            ; (
                              :token-close-paran           ; )
-                             :token-open-curly-bracket    ; {
-                             :token-close-curly-bracket   ; }
+                             :token-open-brace    ; {
+                             :token-close-brace   ; }
+                             :token-open-bracket    ; [
+                             :token-close-bracket   ; ]
                              :token-comma     ; ,
                              :token-dot       ; .
                              :token-minus     ; -
@@ -144,10 +148,10 @@
           (push (make-token :type :token-open-paran :lexeme character :line line) *tokens*) (incf index))
         ((char= character +token-close-paran+)
           (push (make-token :type :token-close-paran :lexeme character :line line) *tokens*) (incf index))
-        ((char= character +token-open-curly-bracket+)
-          (push (make-token :type :token-open-curly-bracket :lexeme character :line line) *tokens*) (incf index))
-        ((char= character +token-close-curly-bracket+)
-          (push (make-token :type :token-close-curly-bracket :lexeme character :line line) *tokens*) (incf index))
+        ((char= character +token-open-brace+)
+          (push (make-token :type :token-open-brace :lexeme character :line line) *tokens*) (incf index))
+        ((char= character +token-close-brace+)
+          (push (make-token :type :token-close-brace :lexeme character :line line) *tokens*) (incf index))
         ((char= character +token-equal+)
           (push (make-token :type :token-equal :lexeme character :line line) *tokens*) (incf index))
         ((char= character +token-semicolon+)
