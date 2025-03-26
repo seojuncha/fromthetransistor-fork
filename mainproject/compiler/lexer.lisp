@@ -129,8 +129,8 @@
 
 (defparameter *tokens* '())
 
-(defun scanning (source)
-  (format t ">>> start scanning.... ~d characters.~%" (length source))
+(defun tokenize (source)
+  (format t ">>> start tokenizing.... ~d characters.~%" (length source))
   (loop with line = 1 and index = 0
         while (< index (length source)) do
     (let ((start index)

@@ -1,5 +1,5 @@
 (load "package.lisp") 
-(load "scanner.lisp")
+(load "lexer.lisp")
 (in-package :c-compiler)
 
 (defun parsing (tokens)
@@ -9,49 +9,72 @@
   (parse-translation-unit tokens))
 
 
-;;;; C Syntax 
-;;;; Based on ISO/IEC 9899:1999, Annex A Language syntax summary
+;;; C Syntax 
+;;; Based on ISO/IEC 9899:1999, Annex A Language syntax summary
+;;;
+;;; <AST types>
+;;; ast-function-definition
+;;;  :return-type :name :param :body
+;;; ast-literal
+;;; ast-identifier
 
 (defstruct decl-specifier
   specifier
   qualifier
   storage-class)
 
-;; translation-unit: 
-;;   external-declaration
-;;   translation-unit external-declaration
+;;; <CFG> translation-unit: 
+;;;   external-declaration
+;;;   translation-unit external-declaration
 (defun parse-translation-unit (tokens)
   (format t "check first token ~a~%" (car tokens))
   (format t "check token type(int) = ~a~%" (eq (token-token-type (car tokens)) :token-int))
   (format t "check token type(short) = ~a~%" (eq (token-token-type (car tokens)) :token-short))
   (parse-external-declaration tokens))
 
-;; external-declaration:
-;;  function-definition
-;;  declaration
+;;; <CFG> external-declaration:
+;;;  function-definition
+;;;  declaration
 (defun parse-external-declaration (tokens)
   ; start with <declaration-specifiers> in both of <function-definition> and <declaration>
   (parse-function-definition tokens))
 
-;; function-definition:
-;;   declaration-specifiers declarator decaration-list* compount-statement
+;;; <CFG> function-definition:
+;;;   declaration-specifiers declarator declaration-list* compount-statement
+;;;
+;;; <AST> ast-function-definition
+;;;  :return-type : <type-specifier>
+;;;  :name : <declarator> -> <identifier>
+;;;  :param : <parameter-type-list> -> <parameter-list> -> <parameter-declaration> -> <declaration-specifiers> <declarator>
+;;;  :body : <compound-statement> -> <block-item-list> -> <block-item> -> <statement> -> <jump-statement> -> <expression> -> ... -> <primary-expression> -> <constant> -> <integer-constant>
+;;;
+;;; For example,
+;;;   int main(void) { return 1; }
+;;; 
+;;; ast-function-definition
+;;;   :return-type = 'int
+;;;   :name = (ast-identifier "main")
+;;;   :param = '()
+;;;   :body = (ast-jump-statement :type 'return :expr (ast-literal 1))
 (defun parse-function-definition (tokens)
-  (multiple-value-bind (declspec rest-tokens) (parse-declaration-specifiers tokens)
+  (multiple-value-bind (declspec tok-rest-1) (parse-declaration-specifiers tokens)
     (format t "[DEBUG] declspec: ~a~%" declspec)
-    (format t "[DEBUG] rest: ~a~%" rest-tokens)
-    (multiple-value-bind (tok rest-tokens-2) (parse-declarator rest-tokens)
-      (parse-compound-statement rest-tokens-2))))
+    (format t "[DEBUG] token rest: ~a~%" tok-rest-1)
+    (multiple-value-bind (ast-attr-function-name ast-attr-function-param tok-rest-2) (parse-declarator tok-rest-1)
+      (format t "[DEBUG] function name: ~a~%" ast-attr-function-name)
+      (format t "[DEBUG] function param: ~a~%" ast-attr-function-param)
+      (parse-compound-statement tok-rest-2))))
 
-;; declaration:
-;;   declaration-specifiers init-declarator-list* ";"
-(defun parse-declaration (tokens))
+;; declaration-list
+;;    declaration
+;;    declaration-list declaration
+(defun parse-declaration-list (tokens))
 
-
-;; declaration-specifiers:
-;;   storage-class-specifier declaration-specifiers?
-;;   type-specifier declaration-specifiers?
-;;   type-qualifier declaration-specifiers?
-;;   function-specifier declaration-specifiers?
+;;; declaration-specifiers:
+;;;   storage-class-specifier declaration-specifiers?
+;;;   type-specifier declaration-specifiers?
+;;;   type-qualifier declaration-specifiers?
+;;;   function-specifier declaration-specifiers?
 (defun parse-declaration-specifiers (tokens)
   (let ((specifier nil)
         (qualifier nil)
@@ -77,55 +100,86 @@
 (defun function-specifier? (token-type)
   (eq token-type :token-inline))
 
-;; declarator:
-;;    pointer* direct-declarator
+;;; <CFG> declarator:
+;;;    pointer* direct-declarator
+;;;
+;;; NOTE: skip pointer now!
 (defun parse-declarator (tokens)
-  ; skip pointer now!
   (parse-direct-declarator tokens))
 
-
-;; direct-declarator:
-;;    identifier
-;;    "(" declarator ")"
-;;    direct-declarator "(" parameter-type-list ")"
-;;    direct-declarator "(" identifier-list_opt ")"
-;;    ....
+;;; <CFG> direct-declarator:
+;;;    identifier
+;;;    direct-declarator "(" parameter-type-list ")"
+;;;    ....others skip now....
+;;;
+;;; For example,
+;;;   int main(void) { ... }
+;;;      |=========|
+;;;  <direct-declarator>
+;;;
+;;; (ast-identifier main)
+;;; (ast-param '())
+;;; 
+;;; direct-declarator -> main(void)
+;;; direct-declarator
+;;;   - direct-declarator
+;;;      - identifier -> (ast-identifier main)
+;;;   - "(" parameter-type-list ")"
+;;;      - '()
 (defun parse-direct-declarator (tokens)
-  (multiple-value-bind (tok rest-tokens) (expect-token tokens :token-identifier)
-    (format t "[DEBUG] tok: ~a~%" tok)
-    (format t "[DEBUG] rest: ~a~%" rest-tokens)
-    (if tok
-      (values (list 'ast-identifier :name (token-lexeme tok)) rest-tokens)
-      (format t "[ERROR] is not idenfier~%"))))
-
+  (if (eq (token-token-type (car tokens)) :token-identifier)
+    ; ast-identifier -> (ast-identifier main)
+    ; tok-rest -> (void)
+    (multiple-value-bind (ast-attr-function-name tok-rest-1) (parse-identifier tokens)
+      (format t "[DEBUG] ast-identifier: ~a~%" ast-attr-function-name)
+      (format t "[DEBUG] token rest: ~a~%" tok-rest-1)
+      (if (eq (token-token-type (car tok-rest-1)) :token-open-paran)
+        (multiple-value-bind (tok-dummy-1 tok-rest-2) (expect-token tok-rest-1 :token-open-paran)
+          (multiple-value-bind (ast-attr-function-param tok-rest-3) (parse-parameter-type-list tok-rest-2)
+            (format t "[DEBUG] ast-attr-function-param: ~a~%" ast-attr-function-param)
+            (format t "[DEBUG] token rest: ~a~%" tok-rest-3)
+            (multiple-value-bind (tok-dummy-2 tok-rest-4) (expect-token tok-rest-3 :token-close-paran)
+              (values ast-attr-function-name ast-attr-function-param tok-rest-4))))))))
 
 ;; parameter-type-list:
 ;;    parameter-list
 ;;    parameter-list "," "..."
+(defun parse-parameter-type-list (tokens)
+  (parse-parameter-list tokens))
 
 
 ;; parameter-list:
 ;;    parameter-declartion
 ;;    parameter-list "," parameter-declartion
+(defun parse-parameter-list (tokens)
+  (parse-parameter-declaration tokens))
 
 ;; parameter-declaration:
 ;;    declaration-specifiers declarator
-;;    declaration-specfiers abstract-declarator_opt
+;;    declaration-specfiers abstract-declarator*
+(defun parse-parameter-declaration (tokens)
+  (multiple-value-bind (declspec tok-rest-1) (parse-declaration-specifiers tokens)
+    (format t "[DEBUG] declspec: ~a~%" declspec)
+    (format t "[DEBUG] token rest: ~a~%" tok-rest-1)
+    (if (eq (decl-specifier-specifier declspec) :token-void)
+      (values (list '()) tok-rest-1)  ; return empty parameter list
+      (parse-declarator tok-rest-1))))
 
 
-;; compound-statement:
-;;    "{" block-item-list*"}"
-(defun parse-compound-statement (tokens)
-  ())
+;; declaration:
+;;    declaration-specifiers init-declarator-list* ";"
+(defun parse-declaration (tokens))
 
+;; init-declarator-list:
+;;    init-declarator
+;;    init-declarator-list "," init-declarator
+(defun parse-init-declarator-list (tokens))
 
-;; block-item-list
-;;    block-item
-;;    block-item-list block-item 
+;; init-declarator:
+;;    declarator
+;;    declarator "=" initializer
+(defun parse-init-declarator (tokens))
 
-;; block-item:
-;;    declaration
-;;    statement
 
 ;; statement:
 ;;    labeled-statement
@@ -134,6 +188,21 @@
 ;;    selection-statement
 ;;    iteration-statement
 ;;    jump-statement
+(defun parse-statement (tokens))
+
+;; compound-statement:
+;;    "{" block-item-list*"}"
+(defun parse-compound-statement (tokens))
+
+;; block-item-list
+;;    block-item
+;;    block-item-list block-item 
+(defun parse-block-item-list (tokens))
+
+;; block-item:
+;;    declaration
+;;    statement
+(defun parse-block-item (tokens))
 
 ;; jump-statement:
 ;;    "goto" identifier ";"
@@ -184,7 +253,7 @@
       ((eq (token-token-type tok) :token-identifier)
        (list 'ast-identifier (token-lexeme tok)))
       ((eq (token-token-type tok) :token-number)
-       (list 'ast-number (token-lexeme tok)))
+       (list 'ast-literal (token-lexeme tok)))
       (t
        (format t "Invalid token~%")))))
 
@@ -193,6 +262,10 @@
 ;;    identifier-nondigit
 ;;    identifier identifier-nondigit
 ;;    identifier digit
+(defun parse-identifier (tokens)
+  (multiple-value-bind (tok-id tok-rest) (expect-token tokens :token-identifier)
+    (values (list 'ast-identifier (token-lexeme tok-id)) tok-rest)))
+
 
 ;; identifier-nondigit:
 ;;    nondigit

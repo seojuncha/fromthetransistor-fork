@@ -1,5 +1,5 @@
 (load "package.lisp") 
-(load "scanner.lisp")
+(load "lexer.lisp")
 (load "parser.lisp")
 (load "codegen.lisp")
 
@@ -22,7 +22,7 @@
         (let ((contents (make-string (file-length instream))))
           (read-sequence contents instream)
           (format t "read source...~%~a~%" contents)
-          (let ((tokens (scanning contents)))
+          (let ((tokens (tokenize contents)))
             (format t "tokens: ~a~%" tokens)
             (parsing tokens)))))))
 
