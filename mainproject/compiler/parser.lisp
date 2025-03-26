@@ -19,7 +19,7 @@
 ;;; ast-identifier
 
 (defstruct decl-specifier
-  specifier
+  type 
   qualifier
   storage-class)
 
@@ -28,8 +28,8 @@
 ;;;   translation-unit external-declaration
 (defun parse-translation-unit (tokens)
   (format t "check first token ~a~%" (car tokens))
-  (format t "check token type(int) = ~a~%" (eq (token-token-type (car tokens)) :token-int))
-  (format t "check token type(short) = ~a~%" (eq (token-token-type (car tokens)) :token-short))
+  (format t "check token type(int) = ~a~%" (eq (token-type (car tokens)) :token-int))
+  (format t "check token type(short) = ~a~%" (eq (token-type (car tokens)) :token-short))
   (parse-external-declaration tokens))
 
 ;;; <CFG> external-declaration:
@@ -70,23 +70,28 @@
 ;;    declaration-list declaration
 (defun parse-declaration-list (tokens))
 
-;;; declaration-specifiers:
+;;; <CFG> declaration-specifiers:
 ;;;   storage-class-specifier declaration-specifiers?
 ;;;   type-specifier declaration-specifiers?
 ;;;   type-qualifier declaration-specifiers?
 ;;;   function-specifier declaration-specifiers?
+;;;
+;;; For example,
+;;;   int a
+;;;   const int b
+;;;   static const int c
 (defun parse-declaration-specifiers (tokens)
-  (let ((specifier nil)
+  (let ((type nil)
         (qualifier nil)
         (storage-class nil)
         (rest tokens))
-    (loop while (car rest) for tok = (token-token-type (car rest)) do
+    (loop while (car rest) for tok = (token-type (car rest)) do
       (cond
         ((storage-class-specifier? tok) (setf storage-class tok) (setf rest (cdr rest)))
-        ((type-specifier? tok) (setf specifier tok) (setf rest (cdr rest)))
+        ((type-specifier? tok) (setf type tok) (setf rest (cdr rest)))
         ((type-qualifier? tok) (setf qualifier tok) (setf rest (cdr rest)))
         (t (return))))
-    (values (make-decl-specifier :specifier specifier :qualifier qualifier :storage-class storage-class) rest)))
+    (values (make-decl-specifier :type type :qualifier qualifier :storage-class storage-class) rest)))
 
 (defun storage-class-specifier? (token-type)
   (member token-type '(:token-typedef :token-extern :token-static :token-auto :token-register)))
@@ -127,13 +132,13 @@
 ;;;   - "(" parameter-type-list ")"
 ;;;      - '()
 (defun parse-direct-declarator (tokens)
-  (if (eq (token-token-type (car tokens)) :token-identifier)
+  (if (eq (token-type (car tokens)) :token-identifier)
     ; ast-identifier -> (ast-identifier main)
     ; tok-rest -> (void)
     (multiple-value-bind (ast-attr-function-name tok-rest-1) (parse-identifier tokens)
       (format t "[DEBUG] ast-identifier: ~a~%" ast-attr-function-name)
       (format t "[DEBUG] token rest: ~a~%" tok-rest-1)
-      (if (eq (token-token-type (car tok-rest-1)) :token-open-paran)
+      (if (eq (token-type (car tok-rest-1)) :token-open-paran)
         (multiple-value-bind (tok-dummy-1 tok-rest-2) (expect-token tok-rest-1 :token-open-paran)
           (multiple-value-bind (ast-attr-function-param tok-rest-3) (parse-parameter-type-list tok-rest-2)
             (format t "[DEBUG] ast-attr-function-param: ~a~%" ast-attr-function-param)
@@ -161,7 +166,7 @@
   (multiple-value-bind (declspec tok-rest-1) (parse-declaration-specifiers tokens)
     (format t "[DEBUG] declspec: ~a~%" declspec)
     (format t "[DEBUG] token rest: ~a~%" tok-rest-1)
-    (if (eq (decl-specifier-specifier declspec) :token-void)
+    (if (eq (decl-specifier-type declspec) :token-void)
       (values (list '()) tok-rest-1)  ; return empty parameter list
       (parse-declarator tok-rest-1))))
 
@@ -250,9 +255,9 @@
 (defun parse-primary-expression (tokens)
   (let ((tok (car tokens)))
     (cond
-      ((eq (token-token-type tok) :token-identifier)
+      ((eq (token-type tok) :token-identifier)
        (list 'ast-identifier (token-lexeme tok)))
-      ((eq (token-token-type tok) :token-number)
+      ((eq (token-type tok) :token-number)
        (list 'ast-literal (token-lexeme tok)))
       (t
        (format t "Invalid token~%")))))
@@ -291,13 +296,13 @@
 
 ;;;; Utility Functions
 (defun next-token (tokens)
-  (token-token-type (car tokens)))
+  (token-type (car tokens)))
 
 ;;; This function returns the rest of tokens
 ;;; if the first token is matched with the expected token type.
 ;;; Q. What if the type is not matched? How can I stop parsing?
 (defun expect-token (tokens expect-token-type)
   (let ((tok (car tokens)))
-    (if (eq (token-token-type tok) expect-token-type)
+    (if (eq (token-type tok) expect-token-type)
       (values tok (cdr tokens))
       (format t "[ERROR] Unexpected token: ~a~%" tok))))

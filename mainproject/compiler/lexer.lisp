@@ -83,7 +83,7 @@
                              :token-eof))
 
 (defstruct token
-  token-type
+  type
   lexeme
   literal
   line)
@@ -141,17 +141,17 @@
 
       (cond 
         ((char= character +token-open-paran+)
-          (push (make-token :token-type :token-open-paran :lexeme character :line line) *tokens*) (incf index))
+          (push (make-token :type :token-open-paran :lexeme character :line line) *tokens*) (incf index))
         ((char= character +token-close-paran+)
-          (push (make-token :token-type :token-close-paran :lexeme character :line line) *tokens*) (incf index))
+          (push (make-token :type :token-close-paran :lexeme character :line line) *tokens*) (incf index))
         ((char= character +token-open-curly-bracket+)
-          (push (make-token :token-type :token-open-curly-bracket :lexeme character :line line) *tokens*) (incf index))
+          (push (make-token :type :token-open-curly-bracket :lexeme character :line line) *tokens*) (incf index))
         ((char= character +token-close-curly-bracket+)
-          (push (make-token :token-type :token-close-curly-bracket :lexeme character :line line) *tokens*) (incf index))
+          (push (make-token :type :token-close-curly-bracket :lexeme character :line line) *tokens*) (incf index))
         ((char= character +token-equal+)
-          (push (make-token :token-type :token-equal :lexeme character :line line) *tokens*) (incf index))
+          (push (make-token :type :token-equal :lexeme character :line line) *tokens*) (incf index))
         ((char= character +token-semicolon+)
-          (push (make-token :token-type :token-semicolon :lexeme character :line line) *tokens*) (incf index))
+          (push (make-token :type :token-semicolon :lexeme character :line line) *tokens*) (incf index))
 
         ((char= character +token-space+)
           (incf index))
@@ -167,7 +167,7 @@
                 (incf index (identifier source start offset line)))
               (t (format t "unknown: ~s~%" character) (incf index))))
           )))
-  (push (make-token :token-type :eof) *tokens*)
+  (push (make-token :type :eof) *tokens*)
   (reverse *tokens*))
 
 (defun digit-number (source start offset line)
@@ -177,7 +177,7 @@
   (let ((substring nil))
     (setq substring (subseq source start (+ start offset)))
     (format t "number substring: ~s~%" substring)
-    (push (make-token :token-type :token-number :lexeme substring :line line) *tokens*))
+    (push (make-token :type :token-number :lexeme substring :line line) *tokens*))
   offset)
 
 (defun identifier (source start offset line)
@@ -195,8 +195,8 @@
       (if present
         (progn 
           (format t ">>> \"~a\" is keyword!~%" substring)
-          (push (make-token :token-type value :lexeme substring :line line) *tokens*))
+          (push (make-token :type value :lexeme substring :line line) *tokens*))
         (progn
           (format t ">>> \"~a\" is identifier!~%" substring)
-          (push (make-token :token-type :token-identifier :lexeme substring :line line) *tokens*)))))
+          (push (make-token :type :token-identifier :lexeme substring :line line) *tokens*)))))
   offset)
