@@ -23,7 +23,8 @@
   qualifier
   storage-class)
 
-;;; <CFG> translation-unit: 
+;;; <CFG>
+;;; translation-unit: 
 ;;;   external-declaration
 ;;;   translation-unit external-declaration
 (defun parse-translation-unit (tokens)
@@ -32,17 +33,20 @@
   (format t "check token type(short) = ~a~%" (eq (token-type (car tokens)) :token-short))
   (parse-external-declaration tokens))
 
-;;; <CFG> external-declaration:
+;;; <CFG>
+;;; external-declaration:
 ;;;  function-definition
 ;;;  declaration
 (defun parse-external-declaration (tokens)
   ; start with <declaration-specifiers> in both of <function-definition> and <declaration>
   (parse-function-definition tokens))
 
-;;; <CFG> function-definition:
+;;; <CFG>
+;;; function-definition:
 ;;;   declaration-specifiers declarator declaration-list* compount-statement
 ;;;
-;;; <AST> ast-function-definition
+;;; <AST> 
+;;; ast-function-definition
 ;;;  :return-type : <type-specifier>
 ;;;  :name : <declarator> -> <identifier>
 ;;;  :param : <parameter-type-list> -> <parameter-list> -> <parameter-declaration> -> <declaration-specifiers> <declarator>
@@ -66,12 +70,14 @@
       (format t "[DEBUG] token rest: ~a~%" tok-rest-2)
       (parse-compound-statement tok-rest-2))))
 
-;; declaration-list
-;;    declaration
-;;    declaration-list declaration
+;;; <CFG>
+;;; declaration-list
+;;;    declaration
+;;;    declaration-list declaration
 (defun parse-declaration-list (tokens))
 
-;;; <CFG> declaration-specifiers:
+;;; <CFG>
+;;; declaration-specifiers:
 ;;;   storage-class-specifier declaration-specifiers?
 ;;;   type-specifier declaration-specifiers?
 ;;;   type-qualifier declaration-specifiers?
@@ -106,14 +112,16 @@
 (defun function-specifier? (token-type)
   (eq token-type :token-inline))
 
-;;; <CFG> declarator:
+;;; <CFG>
+;;; declarator:
 ;;;    pointer* direct-declarator
 ;;;
 ;;; NOTE: skip pointer now!
 (defun parse-declarator (tokens)
   (parse-direct-declarator tokens))
 
-;;; <CFG> direct-declarator:
+;;; <CFG>
+;;; direct-declarator:
 ;;;    identifier
 ;;;    direct-declarator "(" parameter-type-list ")"
 ;;;    ....others skip now....
@@ -147,22 +155,24 @@
             (multiple-value-bind (tok-dummy-2 tok-rest-4) (expect-token tok-rest-3 :token-close-paran)
               (values ast-attr-function-name ast-attr-function-param tok-rest-4))))))))
 
-;; parameter-type-list:
-;;    parameter-list
-;;    parameter-list "," "..."
+;;; <CFG>
+;;; parameter-type-list:
+;;;    parameter-list
+;;;    parameter-list "," "..."
 (defun parse-parameter-type-list (tokens)
   (parse-parameter-list tokens))
 
-
-;; parameter-list:
-;;    parameter-declartion
-;;    parameter-list "," parameter-declartion
+;;; <CFG>
+;;; parameter-list:
+;;;    parameter-declartion
+;;;    parameter-list "," parameter-declartion
 (defun parse-parameter-list (tokens)
   (parse-parameter-declaration tokens))
 
-;; parameter-declaration:
-;;    declaration-specifiers declarator
-;;    declaration-specfiers abstract-declarator*
+;;; <CFG>
+;;; parameter-declaration:
+;;;    declaration-specifiers declarator
+;;;    declaration-specfiers abstract-declarator*
 (defun parse-parameter-declaration (tokens)
   (multiple-value-bind (declspec tok-rest-1) (parse-declaration-specifiers tokens)
     (format t "[DEBUG] declspec: ~a~%" declspec)
@@ -171,28 +181,32 @@
       (values (list '()) tok-rest-1)  ; return empty parameter list
       (parse-declarator tok-rest-1))))
 
-;; declaration:
-;;    declaration-specifiers init-declarator-list* ";"
+;;; <CFG>
+;;; declaration:
+;;;    declaration-specifiers init-declarator-list* ";"
 (defun parse-declaration (tokens))
 
-;; init-declarator-list:
-;;    init-declarator
-;;    init-declarator-list "," init-declarator
+;;; <CFG>
+;;; init-declarator-list:
+;;;    init-declarator
+;;;    init-declarator-list "," init-declarator
 (defun parse-init-declarator-list (tokens))
 
-;; init-declarator:
-;;    declarator
-;;    declarator "=" initializer
+;;; <CFG>
+;;; init-declarator:
+;;;    declarator
+;;;    declarator "=" initializer
 (defun parse-init-declarator (tokens))
 
 
-;; statement:
-;;    labeled-statement
-;;    compound-statement
-;;    expression-statement
-;;    selection-statement
-;;    iteration-statement
-;;    jump-statement
+;;; <CFG>
+;;; statement:
+;;;    labeled-statement
+;;;    compound-statement
+;;;    expression-statement
+;;;    selection-statement
+;;;    iteration-statement
+;;;    jump-statement
 (defun parse-statement (tokens)
   (cond
     ((jump-statement? (token-type (car tokens)))
@@ -200,30 +214,34 @@
     (t
      (format t "[ERROR] Not supported statement~%"))))
 
-;; <CFG> compound-statement:
-;;    "{" block-item-list* "}"
+;;; <CFG>
+;;; compound-statement:
+;;;    "{" block-item-list* "}"
 (defun parse-compound-statement (tokens)
   (multiple-value-bind (tok-dummy-1 tok-rest) (expect-token tokens :token-open-brace)
     (format t "[DEBUG] token rest: ~a~%" tok-rest)
     (parse-block-item-list tok-rest)))
 
-;; <CFG> block-item-list
-;;    block-item
-;;    block-item-list block-item 
+;;; <CFG>
+;;; block-item-list
+;;;    block-item
+;;;    block-item-list block-item 
 (defun parse-block-item-list (tokens)
   (parse-block-item tokens))
 
-;; <CFG> block-item:
-;;    declaration
-;;    statement
+;;; <CFG>
+;;; block-item:
+;;;    declaration
+;;;    statement
 (defun parse-block-item (tokens)
   (parse-statement tokens))
 
-;; jump-statement:
-;;    "goto" identifier ";"
-;;    "continue" ";"
-;;    "break" ";"
-;;    "return" expression* ";"
+;;; <CFG>
+;;; jump-statement:
+;;;    "goto" identifier ";"
+;;;    "continue" ";"
+;;;    "break" ";"
+;;;    "return" expression* ";"
 (defun parse-jump-statement (tokens)
   ; NOTE: now support only return.
   (let ((tok-type (token-type (car tokens))))
@@ -244,38 +262,12 @@
     (eq tok-type :token-continue)
     (eq tok-type :token-break)))
 
-;; expression:
-;;    assignment-expression
-;;    expression "," assignment-expression
-(defun parse-expression (tokens))
-
-;; assignment-expression:
-;;    conditional-expression
-;;    unary-expression assignment-operator assignment-expression
-(defun parse-assignment-expression (tokens))
-
-
-;; unary-expression:
-;;    postfix-expression
-;;    "++" unary-expression
-;;    "--" unary-expression
-;;    unary-operator cast-expression
-;;    "sizeof" unary-expression
-;;    "sizeof" "(" type-name ")"
-(defun parse-unary-expression (tokens))
-
-;; postfix-expression
-;;    primary-expression
-;;    postfix-expression "[" expression "]"
-;;    ....(later!)
-(defun parse-postfix-expression (tokens))
-
-
-;; primary-expression:
-;;    identifier
-;;    constant
-;;    string-literal
-;;    "(" expression ")"
+;;; <CFG>
+;;; primary-expression:
+;;;    identifier
+;;;    constant
+;;;    string-literal
+;;;    "(" expression ")"
 (defun parse-primary-expression (tokens)
   (let ((tok (car tokens)))
     (cond
@@ -285,6 +277,139 @@
        (list 'ast-literal (token-lexeme tok)))
       (t
        (format t "Invalid token~%")))))
+
+
+;;; <CFG>
+;;; postfix-expression
+;;;    primary-expression
+;;;    postfix-expression "[" expression "]"
+;;;    postfix-expression "(" argument-expression-list* ")"
+;;;    postfix-expression "." identifier
+;;;    postfix-expression "->" identifier
+;;;    postfix-expression "++"
+;;;    postfix-expression "--"
+;;;    "(" type-name ")" "{" initializer-list "}"
+;;;    "(" type-name ")" "{" initializer-list "," "}"
+(defun parse-postfix-expression (tokens))
+
+
+;;; <CFG>
+;;; argument-expression-list:
+;;;    assignment-expression
+;;;    argument-expression-list "," assignment-expression
+(defun parse-argument-expression-list (tokens))
+
+
+;;; <CFG>
+;;; unary-expression:
+;;;    postfix-expression
+;;;    "++" unary-expression
+;;;    "--" unary-expression
+;;;    unary-operator cast-expression
+;;;    "sizeof" unary-expression
+;;;    "sizeof" "(" type-name ")"
+;;;
+;;; unary-operator: one of
+;;;    &  *  +  -  ~  !
+(defun parse-unary-expression (tokens))
+
+;;; <CFG>
+;;; cast-expression:
+;;;    unary-expression
+;;;    "(" type-name ")" cast-expression
+
+
+;;; <CFG>
+;;; multiplicative-expression:
+;;;    cast-expression
+;;;    multiplicative-expression "*" cast-expression
+;;;    multiplicative-expression "/" cast-expression
+;;;    multiplicative-expression "%" cast-expression
+
+
+;;; <CFG>
+;;; additive-expression:
+;;;    multiplicative-expression
+;;;    additive-expression "+" multiplicative-expression
+;;;    additive-expression "-" multiplicative-expression
+
+
+;;; <CFG>
+;;; shift-expression:
+;;;    additive-expression
+;;;    shift-expression "<<" additive-expression
+;;;    shift-expression ">>" additive-expression
+
+
+;;; <CFG>
+;;; relational-expression:
+;;;    shift-expression
+;;;    relational-expression "<" shift-expression
+;;;    relational-expression ">" shift-expression
+;;;    relational-expression "<=" shift-expression
+;;;    relational-expression ">=" shift-expression
+
+
+;;; <CFG>
+;;; equality-expression:
+;;;    relational-expression
+;;;    equality-expression "==" relational-expression
+;;;    equality-expression "!=" relational-expression
+
+
+;;; <CFG>
+;;; AND-expression:
+;;;    equality-expression
+;;;    AND-expression "&" equality-expression
+
+
+;;; <CFG>
+;;; exclusive-OR-expression:
+;;;    AND-expression
+;;;    exclusive-OR-expression "^" AND-expression
+
+;;; <CFG>
+;;; inclusive-OR-expression:
+;;;    exclusive-OR-expression
+;;;    inclusive-OR-expression "|" exclusive-OR-expression
+
+
+;;; <CFG>
+;;; logical-AND-expression:
+;;;    inclusive-OR-expression
+;;;    logical-AND-expression "&&" inclusive-OR-expression
+
+
+;;; <CFG>
+;;; logical-OR-expression:
+;;;    logical-AND-expression
+;;;    logical-OR-expression "||" logical-AND-expression
+
+;;; <CFG>
+;;; conditional-expression:
+;;;    logical-OR-expression
+;;;    logical-OR-expression "?" expression ":" conditional-expression
+
+;;; <CFG>
+;;; assignment-expression:
+;;;    conditional-expression
+;;;    unary-expression assignment-operator assignment-expression
+;;;
+;;; assignment-operator: one of
+;;;   =  *=  /=  %=  +=  -=  <<=  >>=  &=  ^=  |=
+(defun parse-assignment-expression (tokens))
+
+
+
+;;; <CFG>
+;;; expression:
+;;;    assignment-expression
+;;;    expression "," assignment-expression
+(defun parse-expression (tokens))
+
+;;; <CFG>
+;;; constant-expression:
+;;;    conditional-expression
 
 
 ;; identifier:
@@ -322,7 +447,7 @@
 (defun next-token (tokens)
   (token-type (car tokens)))
 
-;;; This function returns the rest of tokens
+;;; This function returns the current token and the rest of tokens
 ;;; if the first token is matched with the expected token type.
 ;;; Q. What if the type is not matched? How can I stop parsing?
 (defun expect-token (tokens expect-token-type)
