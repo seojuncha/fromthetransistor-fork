@@ -27,6 +27,10 @@
 ;;; translation-unit: 
 ;;;   external-declaration
 ;;;   translation-unit external-declaration
+;;;
+;;; <AST>
+;;; NAME: ast-translation-unit
+;;; DESC: The root node of AST. It represents the whole program. 
 (defun parse-translation-unit (tokens)
   (format t "check first token ~a~%" (car tokens))
   (format t "check token type(int) = ~a~%" (eq (token-type (car tokens)) :token-int))
@@ -35,8 +39,8 @@
 
 ;;; <CFG>
 ;;; external-declaration:
-;;;  function-definition
-;;;  declaration
+;;;   function-definition
+;;;   declaration
 (defun parse-external-declaration (tokens)
   ; start with <declaration-specifiers> in both of <function-definition> and <declaration>
   (parse-function-definition tokens))
@@ -46,7 +50,9 @@
 ;;;   declaration-specifiers declarator declaration-list* compount-statement
 ;;;
 ;;; <AST> 
-;;; ast-function-definition
+;;; NAME: ast-function-definition
+;;; DESC: 
+;;; ATTR:
 ;;;  :return-type : <type-specifier>
 ;;;  :name : <declarator> -> <identifier>
 ;;;  :param : <parameter-type-list> -> <parameter-list> -> <parameter-declaration> -> <declaration-specifiers> <declarator>
