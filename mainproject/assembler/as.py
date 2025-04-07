@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
   if (args.verify):
     print("Verify option is enabled....")
-    origin_dir = Path("gnu_out/")
+    origin_dir = Path("output/")
     if not origin_dir.exists():
       origin_dir.mkdir(parents=True)
 
@@ -74,6 +74,7 @@ if __name__ == "__main__":
         f.write(bits.to_bytes(length=4, byteorder="little"))
 
     if (args.verify):
+      print(f"Platform: {platform}")
       origin_obj_path = origin_dir / (asmname + ".o")
       origin_bin_path = origin_dir / (asmname + ".bin")
       if platform == "linux":

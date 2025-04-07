@@ -1,29 +1,10 @@
-# Main Project
+## Main Project
+This directory contains the core components of the system under construction. It represents the entire toolchain and MCU needed to build a minimal computer from scratch.
 
-## Make (verilog)
-- [ ] uart controller
-- [ ] ARM7 like CPU
-- [ ] MMU
-- [ ] ethernet controller
+### Structure
 
-## Make (python)
-- [ ] assembler
-- [ ] linker
-
-## Make (assembler)
-- [ ] bootrom
-
-## Make (common lisp?)
-- [ ] C compiler
-
-## Make (C)
-- [ ] bootloader
-- [ ] os
-- [ ] command-line user space program
-
-## Section 1. Transistor and Verilog
-### Setup environment to simulate Verilog
-
-## Section 2. Serial communication, UART
-
-## Section 3. CPU and Assembler
+- `assembler/` – Converts assembly source code to binary machine code.
+- `compiler/` – (WIP) Translates high-level language to intermediate representation.
+- `data/` – Stores assembly files, binary data, test programs, or input/output vectors.
+- `linker/` – (next) Combines multiple object files into a final binary.
+- `mcu/` – Hardware-level implementation of the system (includes bootloader, CPU, memory, UART, etc.).

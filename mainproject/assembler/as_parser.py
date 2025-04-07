@@ -1,5 +1,5 @@
 from as_obj import *
-from define import *
+from instruction_set import *
 
 class Parser:
   def __init__(self, debug=False):
@@ -11,8 +11,10 @@ class Parser:
   def parse(self, filepath) -> list[InstructionObj]:
     inst_objs = []
     with open(filepath, "r") as f:
+      # First Pass to build a simple symbol table
       self.parse_label(f)
       for line in f.readlines():
+        # Second Pass to replace labels with addresses
         obj = self.parse_line(line)
         if obj is not None:
           inst_objs.append(obj)

@@ -1,5 +1,5 @@
 from as_obj import *
-from define import *
+from instruction_set import *
 
 class Encoder:
   def __init__(self, debug=False):

@@ -1,4 +1,4 @@
-# Setup environment
+## Setup environment
 
 __MacOS__
 - Processor: Apple Sillicon M2
@@ -47,7 +47,7 @@ $ qemu-arm --version
 $ qemu-system-arm --version
 ```
 
-__Ubuntu__
+**Ubuntu** / **Debian**
 ```shell
 $ sudo apt install iverilog
 $ pip3 install cocotb

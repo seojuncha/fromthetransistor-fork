@@ -1,4 +1,4 @@
-from define import *
+from instruction_set import *
 
 class InstructionObj:
   def __init__(self, 

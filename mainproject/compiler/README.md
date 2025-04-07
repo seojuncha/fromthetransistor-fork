@@ -1,138 +1,70 @@
-# C Compiler
+## Compiler (WIP)
 
+This directory contains an experimental C compiler written in Common Lisp (SBCL). It is a part of the project’s goal to build a full toolchain from scratch — from source code to binary execution on a custom MCU.
 
-## The Structure of Compiler
-There are two parts: *analysis* and *synthesis*
+## Design Goals
 
-*analysis part (front end)*
-- break up the source program into constituent pieces
-- create an intermediate representation
-- syntactically ill formed
-- semantically unsound
-- collects information about the source program
-- stores the information in a data structure called a *symbol table*
-
-*synthesis part (back end)*
-- constructs the desired target program
-- from intermediate representation and the informatino in the symbol table
-
-
-## Phase of Compiler
-
-Lexical Analyzer
-
-Syntax Analyzer
-
-Semantic Analyzer
-
-Intermediate Code Generator
-
-Machine-Independent Code Optimizer
-
-Code Generator
-
-Machine-Dependent Code Optimizer
-
-(with Symbol Table)
-
-## Phase 1: Lexical Analysis(Scanning)
-
-## Phase 2: Syntax Analysis(Parsing)
-Create a tree-like intermediate representation: syntax tree
-
-
-## Phase 3: Semantic Analysis
-An important part of semantic analysis is *type checking*.
-
-
-## Phase 4: Intermediate Code Generator
-
-## Phase 5: Code Optimization
-
-## Phase 6: Code Generation
-The code generator takes as input an intermediate representation of the source program and maps it into the target language.
-The intermediate instructinos are translated into sequences of machine instructinos that perform the same task.
-A crucial part is the judicious assignment of registers to hold variables.
-
-
----
-# Which Parts of Compiler in Common?
-
-## Lexer (Lexical Analyzer)
-The first step is a lexical analysis from a ***Lexer***, in other words *Scanner*.  
-The main job is to make tokens from a stream of characters. For example,
-```c
-int a = 3;
-```
-- int
-- a
-- =
-- 3
-- ;
-
-So, the main thing that I have to think about is **how can I generate tokens from a flat character sequence**.
-
-Moreover, all tokens have a meaningful information, like a it's type.
-- Token Type
-  - keywords
-    - int, float, char
-    - return
-    - if, else if, else
-    - while, do, for
-    - define
-  - one-character
-    - =
-    - +, -, *, /, %
-    - <, >
-    - \#
-    - (, )
-    - {, }
-    - ;
-  - two or more character
-    - ==, >=, <=
-    - <<, >>
-    - +=, -=, *=, /=, %=
-  - literals
-    - number
-    - string
-    - identifier (variable name, function name)
-
-
-## Parser (Syntax Analyzer)
-The next step is *parsing*.
-Commonly, produce a ***parse tree or syntax tree***
-
-## Semantic Analyzer (Type Checking, Static Analysis)
-Chekcs variable scope, type error, make a symbol table.
-
-## Intermediate representation
-
-
-## Code Generator (Assembly Generator)
-
-
-
-## Single-Pass Compiler
-- No IR(Intermediate Representation) or a syntax tree.
-- Pascal and C
+- Write a minimal ISO C99-compatible compiler targeting our own instruction set
+- Build the compiler in Common Lisp for rapid prototyping and clarity
+- Implement a **recursive descent parser (LL style)**
+- Eventually produce valid assembly or binary output usable by our assembler
 
 
 ## References
-- **Open Source C Compiler**
-  - [chibicc](https://github.com/rui314/chibicc)
-  - [ucc](https://github.com/sheisc/ucc162.3)
-- **Books & Papers**
-  - C Language Standard
-    - [ANSI C](https://en.wikipedia.org/wiki/ANSI_C)
-      - [C99](https://www.dii.uchile.cl/~daespino/files/Iso_C_1999_definition.pdf)
-    - [The syntax of C in EBNF](https://cs.wmich.edu/~gupta/teaching/cs4850/sumII06/The%20syntax%20of%20C%20in%20Backus-Naur%20form.htm)
-  - Compiler Design
-    - [An Incremental Approach to Compiler Construction](http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf)
-    - [Crafting Interpreters](https://craftinginterpreters.com/contents.html)
-    - Compilers - Principles,Techniques, and Tools(Dragon Book)
-    - [ANSI C Yacc grammer](https://www.quut.com/c/ANSI-C-grammar-y.html)
-  - Lisp
-    - SICP
-    - [Practical Common Lisp](https://gigamonkeys.com/book/)
-    - [Common Lisp the language, 2nd Edition](https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/clm.html)
-    - [Lisp in Small Pars](http://lisp.plasticki.com/)
+
+- [ISO C99 Standard (N1256)](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf) — used as the language reference
+- SBCL (Steel Bank Common Lisp) as the implementation language
+
+
+## Directory Structure
+
+```bash
+compiler/
+├── examples/
+│   ├── return-only.c       # Minimal C program to test parsing: `int main(void) { return 39; }`
+│   └── README.md           # Test program descriptions
+├── lexer.lisp              # Tokenizes the input C code
+├── parser.lisp             # (WIP) LL-style parser using recursive descent
+├── codegen.lisp            # Will eventually emit IR or assembly
+├── compiler.lisp           # Entry point for compilation
+├── package.lisp            # Lisp package definition
+├── run.sh                  # Script to run the compiler
+└── README.md               # This file
+```
+
+## Current Status
+
+- Lexer and token stream implemented
+-   Parser under active development (LL-style recursive descent)
+- Code generation not yet implemented (`codegen.lisp` is a stub)
+- Testing minimal programs like `return-only.c`
+
+
+## Example Input
+
+**`examples/return-only.c`**
+```c
+int main(void) {
+  return 39;
+}
+```
+
+Used for testing tokenization and parsing of basic return statements.
+
+
+## Running the Compiler
+Currently, the entry point is `compiler.lisp`. Load it in the SBCL REPL:
+
+```shell
+$ sbcl --script compiler.lisp examples/return-only.c
+```
+or
+```shell
+$ ./run.sh
+```
+
+## Future Goals
+- Add AST to IR transformation
+- Emit ARMv4 compatible assembly format
+- Integrate with the `assembler/` and `linker/` stages
+- Eventually self-host a tiny C program on our custom MCU
