@@ -2,26 +2,46 @@
 (load "lexer.lisp")
 (in-package :c-compiler)
 
+;;; C Syntax 
+;;; Based on ISO/IEC 9899:1999, Annex A Language syntax summary
+
+;;; AST nodes
+(defstruct decl-specifier
+  type 
+  qualifier
+  storage-class)
+
+(defstruct ast-identifier
+  name)
+
+(defstruct ast-literal
+  value)
+
+(defstruct ast-function-definition
+  return-type
+  name
+  param
+  body)
+
+(defstruct ast-parameter
+  type
+  name)
+
+(defstruct ast-jump-statement
+  type
+  expr)
+
+(defstruct ast-binary-expression
+  :operator
+  :lhs
+  :rhs)
+
+;;; Entry function for the parse phase.
 (defun parsing (tokens)
   (format t ">>> start parsing....~%")
   ; entry point of parsing
   ; The final ast would be returned.
   (parse-translation-unit tokens))
-
-
-;;; C Syntax 
-;;; Based on ISO/IEC 9899:1999, Annex A Language syntax summary
-;;;
-;;; <AST types>
-;;; ast-function-definition
-;;;  :return-type :name :param :body
-;;; ast-literal
-;;; ast-identifier
-
-(defstruct decl-specifier
-  type 
-  qualifier
-  storage-class)
 
 ;;; <CFG>
 ;;; translation-unit: 
@@ -33,8 +53,8 @@
 ;;; DESC: The root node of AST. It represents the whole program. 
 (defun parse-translation-unit (tokens)
   (format t "check first token ~a~%" (car tokens))
-  (format t "check token type(int) = ~a~%" (eq (token-type (car tokens)) :token-int))
-  (format t "check token type(short) = ~a~%" (eq (token-type (car tokens)) :token-short))
+  ; (format t "check token type(int) = ~a~%" (eq (token-type (car tokens)) :token-int))
+  ; (format t "check token type(short) = ~a~%" (eq (token-type (car tokens)) :token-short))
   (parse-external-declaration tokens))
 
 ;;; <CFG>
@@ -240,6 +260,7 @@
 ;;;    declaration
 ;;;    statement
 (defun parse-block-item (tokens)
+  ;; skip declaration now
   (parse-statement tokens))
 
 ;;; <CFG>
@@ -254,8 +275,8 @@
     (cond
       ((eq tok-type :token-return)
         (multiple-value-bind (tok tok-rest) (expect-token tokens :token-return)
-        (format t "[DEBUG] token rest: ~a~%" tok-rest)
-        (parse-expression tok-rest)))
+          (format t "[DEBUG] token rest: ~a~%" tok-rest)
+          (make-ast-jump-statement :type 'return :expr (parse-expression tok-rest))))
       ((eq tok-type :token-goto))
       ((or (eq (tok-type :token-break) (eq tok-type :token-continue))))
       (t
@@ -278,9 +299,12 @@
   (let ((tok (car tokens)))
     (cond
       ((eq (token-type tok) :token-identifier)
-       (list 'ast-identifier (token-lexeme tok)))
+       (make-ast-identifier
+        :name tok))
+      ;  (list 'ast-identifier (token-lexeme tok)))
       ((eq (token-type tok) :token-number)
-       (list 'ast-literal (token-lexeme tok)))
+       (make-ast-literal :value tok))
+      ;  (list 'ast-literal (token-lexeme tok)))
       (t
        (format t "Invalid token~%")))))
 
@@ -411,7 +435,16 @@
 ;;; expression:
 ;;;    assignment-expression
 ;;;    expression "," assignment-expression
-(defun parse-expression (tokens))
+;;;
+;;; For example,
+;;; a = 1            // assignment-expression
+;;; a = 1, b = 2     // expression -> expression , assignment-expression
+;;;                  //          assignment-expression , assignment-expression
+(defun parse-expression (tokens)
+  (format t "parse-expression~%")
+  (multiple-value-bind (lhs-expr tok-rest) (parse-assignment-expression tokens)))
+
+(defun parse-expression-rest (lhs-expr tokens))
 
 ;;; <CFG>
 ;;; constant-expression:
