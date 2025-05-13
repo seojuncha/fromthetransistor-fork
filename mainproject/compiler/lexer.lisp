@@ -28,6 +28,8 @@
                              :token-bang      ; !
                              :token-mod       ; %
                              :token-semicolon
+                             :token-plusplus    ; ++
+                             :token-minusminus  ; --
 
                              :token-equal    ; =
                              :token-equal-equal  ; ==

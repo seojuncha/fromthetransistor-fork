@@ -21,28 +21,28 @@ This directory contains an experimental C compiler written in Common Lisp (SBCL)
 ```bash
 compiler/
 ├── examples/
-│   ├── return-only.c       # Minimal C program to test parsing: `int main(void) { return 39; }`
+│   ├── return-39.c       # Minimal C program to test parsing: `int main(void) { return 39; }`
 │   └── README.md           # Test program descriptions
 ├── lexer.lisp              # Tokenizes the input C code
 ├── parser.lisp             # (WIP) LL-style parser using recursive descent
 ├── codegen.lisp            # Will eventually emit IR or assembly
 ├── compiler.lisp           # Entry point for compilation
 ├── package.lisp            # Lisp package definition
-├── run.sh                  # Script to run the compiler
+├── mini-cc                 # Script to run the compiler
 └── README.md               # This file
 ```
 
 ## Current Status
 
 - Lexer and token stream implemented
--   Parser under active development (LL-style recursive descent)
+- Parser under active development (LL-style recursive descent)
 - Code generation not yet implemented (`codegen.lisp` is a stub)
-- Testing minimal programs like `return-only.c`
+- Testing minimal programs like `return-39.c`
 
 
 ## Example Input
 
-**`examples/return-only.c`**
+**`examples/return-39.c`**
 ```c
 int main(void) {
   return 39;
@@ -56,11 +56,11 @@ Used for testing tokenization and parsing of basic return statements.
 Currently, the entry point is `compiler.lisp`. Load it in the SBCL REPL:
 
 ```shell
-$ sbcl --script compiler.lisp examples/return-only.c
+$ sbcl --script compiler.lisp examples/return-39.c
 ```
 or
 ```shell
-$ ./run.sh
+$ ./mini-cc examples/return-39.c
 ```
 
 ## Future Goals

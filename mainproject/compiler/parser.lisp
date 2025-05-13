@@ -11,6 +11,9 @@
   qualifier
   storage-class)
 
+(defstruct ast-program
+  body)
+
 (defstruct ast-identifier
   name)
 
@@ -32,9 +35,9 @@
   expr)
 
 (defstruct ast-binary-expression
-  :operator
-  :lhs
-  :rhs)
+  operator
+  lhs
+  rhs)
 
 ;;; Entry function for the parse phase.
 (defun parsing (tokens)
@@ -299,8 +302,7 @@
   (let ((tok (car tokens)))
     (cond
       ((eq (token-type tok) :token-identifier)
-       (make-ast-identifier
-        :name tok))
+       (make-ast-identifier :name tok))
       ;  (list 'ast-identifier (token-lexeme tok)))
       ((eq (token-type tok) :token-number)
        (make-ast-literal :value tok))
@@ -341,12 +343,21 @@
 ;;;
 ;;; unary-operator: one of
 ;;;    &  *  +  -  ~  !
-(defun parse-unary-expression (tokens))
+(defun parse-unary-expression (tokens)
+  (cond
+    ((or (eq (token-type (car tokens) :token-plusplus))
+         (eq (token-type (car tokens) :token-minusminus)))
+      (format t "++ or --~%"))
+    ((eq (token-type (car tokens) :token-sizeof))
+     (format t "sizeof~%"))
+    (t
+      (format t "invalid syntax~%"))))
 
 ;;; <CFG>
 ;;; cast-expression:
 ;;;    unary-expression
 ;;;    "(" type-name ")" cast-expression
+(defun parse-cast-expression (tokens))
 
 
 ;;; <CFG>
@@ -355,6 +366,7 @@
 ;;;    multiplicative-expression "*" cast-expression
 ;;;    multiplicative-expression "/" cast-expression
 ;;;    multiplicative-expression "%" cast-expression
+(defun parse-multiplicative-expression (tokens))
 
 
 ;;; <CFG>
@@ -362,6 +374,7 @@
 ;;;    multiplicative-expression
 ;;;    additive-expression "+" multiplicative-expression
 ;;;    additive-expression "-" multiplicative-expression
+(defun parse-additive-expression (tokens))
 
 
 ;;; <CFG>
@@ -369,6 +382,7 @@
 ;;;    additive-expression
 ;;;    shift-expression "<<" additive-expression
 ;;;    shift-expression ">>" additive-expression
+(defun parse-shift-expression (tokens))
 
 
 ;;; <CFG>
@@ -378,6 +392,7 @@
 ;;;    relational-expression ">" shift-expression
 ;;;    relational-expression "<=" shift-expression
 ;;;    relational-expression ">=" shift-expression
+(defun parse-relational-expression (tokens))
 
 
 ;;; <CFG>
@@ -385,40 +400,47 @@
 ;;;    relational-expression
 ;;;    equality-expression "==" relational-expression
 ;;;    equality-expression "!=" relational-expression
+(defun parse-equality-expression (tokens))
 
 
 ;;; <CFG>
 ;;; AND-expression:
 ;;;    equality-expression
 ;;;    AND-expression "&" equality-expression
+(defun parse-and-expression (tokens))
 
 
 ;;; <CFG>
 ;;; exclusive-OR-expression:
 ;;;    AND-expression
 ;;;    exclusive-OR-expression "^" AND-expression
+(defun parse-exclusive-or-expression (tokens))
 
 ;;; <CFG>
 ;;; inclusive-OR-expression:
 ;;;    exclusive-OR-expression
 ;;;    inclusive-OR-expression "|" exclusive-OR-expression
+(defun parse-inclusive-or-expression (tokens))
 
 
 ;;; <CFG>
 ;;; logical-AND-expression:
 ;;;    inclusive-OR-expression
 ;;;    logical-AND-expression "&&" inclusive-OR-expression
+(defun parse-logical-and-expression (tokens))
 
 
 ;;; <CFG>
 ;;; logical-OR-expression:
 ;;;    logical-AND-expression
 ;;;    logical-OR-expression "||" logical-AND-expression
+(defun parse-logical-or-expression (tokens))
 
 ;;; <CFG>
 ;;; conditional-expression:
 ;;;    logical-OR-expression
 ;;;    logical-OR-expression "?" expression ":" conditional-expression
+(defun parse-conditional-expression (tokens))
 
 ;;; <CFG>
 ;;; assignment-expression:
@@ -457,7 +479,8 @@
 ;;    identifier digit
 (defun parse-identifier (tokens)
   (multiple-value-bind (tok-id tok-rest) (expect-token tokens :token-identifier)
-    (values (list 'ast-identifier (token-lexeme tok-id)) tok-rest)))
+    ; (values (list 'ast-identifier (token-lexeme tok-id)) tok-rest)))
+    (values (make-ast-identifier :name tok-id) tok-rest)))
 
 
 ;; identifier-nondigit:

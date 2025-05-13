@@ -1,0 +1,5 @@
+#!/bin/sh
+
+src_file=$1
+echo "source: ${src_file}"
+sbcl --script compiler.lisp $src_file
