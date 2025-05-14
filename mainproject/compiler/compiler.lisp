@@ -6,6 +6,7 @@
 (in-package :c-compiler)
 
 (defparameter *c-file-path* ())
+
 (defun parse-arguments (args)
   (format t "command line arguments: ~a~%" args)
   (loop until (endp args) do
@@ -21,7 +22,7 @@
       (with-open-file (instream parse-file)
         (let ((contents (make-string (file-length instream))))
           (read-sequence contents instream)
-          (format t "read source...~%~a~%" contents)
+          ; (format t "read source...~%~a~%" contents)
           (let ((tokens (tokenize contents)))
             (format t "tokens: ~a~%" tokens)
             (parsing tokens)))))))

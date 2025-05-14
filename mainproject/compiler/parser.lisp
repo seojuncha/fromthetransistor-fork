@@ -55,7 +55,7 @@
 ;;; NAME: ast-translation-unit
 ;;; DESC: The root node of AST. It represents the whole program. 
 (defun parse-translation-unit (tokens)
-  (format t "check first token ~a~%" (car tokens))
+  ; (format t "check first token ~a~%" (car tokens))
   ; (format t "check token type(int) = ~a~%" (eq (token-type (car tokens)) :token-int))
   ; (format t "check token type(short) = ~a~%" (eq (token-type (car tokens)) :token-short))
   (parse-external-declaration tokens))

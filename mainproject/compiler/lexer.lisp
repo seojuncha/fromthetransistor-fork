@@ -143,7 +143,7 @@
           (offset 0)
           (character nil))
       (setq character (char source index))
-      (format t "[line:~d][index:~d] ~a~%" line index character)
+      ; (format t "[line:~d][index:~d] ~a~%" line index character)
 
       (cond 
         ((char= character +token-open-paran+)
@@ -166,24 +166,30 @@
 
         (t (cond
               ((digit-char-p character) 
-                (format t "numeric~%")
+                ; (format t "numeric~%")
                 (incf index (digit-number source start offset line)))
               ((alpha-char-p character)
-                (format t "alphabet~%")
+                ; (format t "alphabet~%")
                 (incf index (identifier source start offset line)))
               (t (format t "unknown: ~s~%" character) (incf index))))
           )))
-  (push (make-token :type :eof) *tokens*)
+  (push (make-token 
+          :type :eof) 
+        *tokens*)
   (reverse *tokens*))
 
 (defun digit-number (source start offset line)
   (loop while (or (digit-char-p (char source (+ start offset)))) do
                           (incf offset))
-  (format t "offset: ~d~%" offset)
+  ; (format t "offset: ~d~%" offset)
   (let ((substring nil))
     (setq substring (subseq source start (+ start offset)))
-    (format t "number substring: ~s~%" substring)
-    (push (make-token :type :token-number :lexeme substring :line line) *tokens*))
+    ; (format t "number substring: ~s~%" substring)
+    (push (make-token 
+            :type :token-number 
+            :lexeme substring 
+            :line line) 
+          *tokens*))
   offset)
 
 (defun identifier (source start offset line)
@@ -192,17 +198,25 @@
                 (alpha-char-p (char source (+ start offset)))
                 (char= #\_ (char source (+ start offset)))) do
     (incf offset))
-  (format t "offset: ~d~%" offset)
+  ; (format t "offset: ~d~%" offset)
 
   (let ((substring nil))
     (setq substring (subseq source start (+ start offset)))
-    (format t "identifier substring: ~s~%" substring)
+    ; (format t "identifier substring: ~s~%" substring)
     (multiple-value-bind (value present) (gethash substring *keywords*)
       (if present
         (progn 
-          (format t ">>> \"~a\" is keyword!~%" substring)
-          (push (make-token :type value :lexeme substring :line line) *tokens*))
+          ; (format t ">>> \"~a\" is keyword!~%" substring)
+          (push (make-token 
+                  :type value 
+                  :lexeme substring 
+                  :line line)
+                *tokens*))
         (progn
-          (format t ">>> \"~a\" is identifier!~%" substring)
-          (push (make-token :type :token-identifier :lexeme substring :line line) *tokens*)))))
+          ; (format t ">>> \"~a\" is identifier!~%" substring)
+          (push (make-token 
+                  :type :token-identifier 
+                  :lexeme substring 
+                  :line line) 
+                *tokens*)))))
   offset)
